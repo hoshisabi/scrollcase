@@ -418,11 +418,14 @@ def generate_images_for_session(session_date_str: str, campaign_dir: pathlib.Pat
     images_dir.mkdir(parents=True, exist_ok=True)
 
     for i, prompt in enumerate(prompts):
-        if i > 0:
-            time.sleep(6)
         filename = f"{session_date_str}-achievement-{i+1}.png"
         out_path = images_dir / filename
-        print(f"  Generating image {i+1}/{len(prompts)}...")
+        if out_path.exists():
+            print(f"  [{i+1}/{len(prompts)}] Skipping (already exists): {filename}")
+            continue
+        if i > 0:
+            time.sleep(6)
+        print(f"  [{i+1}/{len(prompts)}] Generating: {filename}")
         try:
             resp = client.models.generate_images(
                 model="imagen-4.0-fast-generate-001",
@@ -430,7 +433,7 @@ def generate_images_for_session(session_date_str: str, campaign_dir: pathlib.Pat
                 config=types.GenerateImagesConfig(number_of_images=1),
             )
             resp.generated_images[0].image.save(out_path)
-            print(f"    → {filename}")
+            print(f"    Done: {filename}")
         except Exception as e:
             print(f"    Failed: {e}")
 

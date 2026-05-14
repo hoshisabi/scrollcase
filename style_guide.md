@@ -54,16 +54,18 @@ Each achievement block follows this pattern:
 
 ```html
 <!-- image_prompt: [full image generation prompt] -->
+<div class="achievement">
 <img class="achievement-badge" src="images/YYYY-MM-DD-achievement-N.png" alt="[achievement title]">
-
-**[Achievement Title]** — [1-2 sentence description of the moment]
+<p><strong>[Achievement Title]</strong> — [1-2 sentence description of the moment]</p>
+</div>
 ```
 
 Rules:
-- The `<!-- image_prompt: ... -->` comment is parsed by `process_session.py --generate-images` — keep it on its own line, one per achievement, in order.
-- Use `class="achievement-badge"` (defined in `assets/css/style.css`) — floats the badge left at 72px with the description wrapping right.
+- The `<!-- image_prompt: ... -->` comment is parsed by `process_session.py --generate-images` — keep it on its own line, immediately before the `<div>`, in order.
+- Wrap each achievement in `<div class="achievement">` — this creates a flex row (icon left, text right, text never wraps under the icon).
+- Use `<p><strong>...</strong></p>` for the description, not markdown bold — the div is an HTML block so markdown inside it won't render.
 - Use the achievement title as `alt` text, not the full prompt.
-- After the last achievement block, add `<div style="clear:both"></div>` to prevent float bleed.
+- No `clear:both` div needed after the last achievement — the flex layout doesn't use floats.
 
 ## Faction Notes
 

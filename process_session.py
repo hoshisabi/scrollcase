@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 """
-process_session.py — Pandemonium Pub Crawl session prep pipeline
+process_session.py -- TTRPG session prep pipeline
 
 Does the mechanical work so Claude Code can do the creative work.
 
 Usage:
-    uv run python process_session.py <notecat_markdown_file>
+    uv run python process_session.py <transcript_file>
     uv run python process_session.py --generate-images <session_date>  (e.g. 2026-05-13)
 
+Supported transcript formats (auto-detected):
+  - NoteCat markdown  (PandoDnD / online campaigns)
+  - Raw Speaker: text (SessionKeeper / in-person campaigns)
+
 Stages (normal run):
-  1. Parse NoteCat markdown  → date, speakers, intro segment
-  2. Warhorn lookup           → session name, scenario
-  3. Adventure catalog        → code, title, metadata
+  1. Parse transcript         → date, speakers, intro segment
+  2. Warhorn lookup           → session name, scenario  [NoteCat campaigns only]
+  3. Adventure catalog        → code, title, metadata   [NoteCat campaigns only]
   4. Roster questions         → interactive, updates player registry
   5. Write outputs            → DM roster file + context summary for Claude Code
 
@@ -40,11 +44,11 @@ WARHORN_API_ENDPOINT = "https://warhorn.net/graphql"
 WARHORN_EVENT_SLUG = "pandodnd"
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# -- Helpers -------------------------------------------------------------------
 
 def ask(prompt: str, default: str = None) -> str:
     hint = f" [{default}]" if default else ""
-    print(f"\n❓ {prompt}{hint}: ", end="", flush=True)
+    print(f"\n? {prompt}{hint}: ", end="", flush=True)
     answer = input().strip()
     return answer if answer else (default or "")
 
@@ -57,7 +61,48 @@ def format_date(d) -> str:
     return f"{d.strftime('%B')} {d.day}, {d.year}"
 
 
-# ── Stage 1: Parse NoteCat ────────────────────────────────────────────────────
+# -- Stage 1: Parse transcript -------------------------------------------------
+
+def detect_format(path: pathlib.Path) -> str:
+    """Return 'notecat' or 'raw' based on file content."""
+    text = path.read_text(encoding="utf-8", errors="ignore")[:1000]
+    if re.search(r"\*\*Date\*\*:", text) or re.search(r"\*\*.+?\*\* - \d+:\d+", text):
+        return "notecat"
+    return "raw"
+
+
+def parse_raw_transcript(path: pathlib.Path) -> dict:
+    """Parse a plain 'Speaker: text' transcript (SessionKeeper / named whisper output)."""
+    text = path.read_text(encoding="utf-8")
+
+    # Date from filename: session_transcript_MMDDYY.txt or YYYY-MM-DD anywhere in stem
+    m = re.search(r"(\d{4}-\d{2}-\d{2})", path.stem)
+    if m:
+        session_date = datetime.strptime(m.group(1), "%Y-%m-%d").date()
+    else:
+        m = re.search(r"(\d{6})", path.stem)
+        if m:
+            session_date = datetime.strptime(m.group(1), "%m%d%y").date()
+        else:
+            raise ValueError(f"Cannot extract date from filename: {path.name}")
+
+    speakers = list(dict.fromkeys(
+        s.strip() for s in re.findall(r"^([^:\n]+):", text, re.MULTILINE)
+        if s.strip()
+    ))
+
+    intro = "\n".join(text.splitlines()[:120])
+
+    return {
+        "date": session_date,
+        "date_str": session_date.strftime("%Y-%m-%d"),
+        "duration": "unknown",
+        "speakers": speakers,
+        "transcript": text,
+        "intro": intro,
+        "source_path": str(path.resolve()),
+    }
+
 
 def parse_notecat(path: pathlib.Path) -> dict:
     text = path.read_text(encoding="utf-8")
@@ -118,7 +163,7 @@ def _extract_intro(transcript: str, minutes: int = 20) -> str:
     return "\n".join(kept)
 
 
-# ── Stage 2: Warhorn lookup ───────────────────────────────────────────────────
+# -- Stage 2: Warhorn lookup ---------------------------------------------------
 
 _WARHORN_QUERY = """
 query EventSessions($events: [String!]!, $startsAfter: ISO8601DateTime) {
@@ -172,7 +217,7 @@ def query_warhorn(session_date, token: str, slug_override: str = None) -> Option
         return None
 
 
-# ── Stage 3: Adventure catalog lookup ────────────────────────────────────────
+# -- Stage 3: Adventure catalog lookup ----------------------------------------
 
 def lookup_catalog(catalog_dir: pathlib.Path, scenario_name: str) -> Optional[dict]:
     if not catalog_dir or not catalog_dir.exists():
@@ -193,7 +238,7 @@ def lookup_catalog(catalog_dir: pathlib.Path, scenario_name: str) -> Optional[di
     return None
 
 
-# ── Stage 4: Player registry & roster ────────────────────────────────────────
+# -- Stage 4: Player registry & roster ----------------------------------------
 
 def load_registry(path: pathlib.Path) -> list:
     if path.exists():
@@ -240,7 +285,7 @@ def build_roster_interactively(speakers: list, registry: list) -> list:
     dm_set = False
 
     for discord_name in speakers:
-        print(f"\n  ── {discord_name} ──")
+        print(f"\n  -- {discord_name} --")
 
         is_dm = False
         if not dm_set:
@@ -293,22 +338,22 @@ def _parse_discord_name(name: str) -> tuple[str, Optional[str]]:
             return parts[0].strip(), parts[1].strip()
         return inner.strip(), None
 
-    # Pattern: Word Word (Character)  — e.g. "Ken B. (Kenistopheles)"
+    # Pattern: Word Word (Character)  -- e.g. "Ken B. (Kenistopheles)"
     m = re.match(r"(.+?)\s*\((.+?)\)$", name)
     if m:
         return m.group(1).strip(), m.group(2).strip()
 
-    # Plain name or opaque handle — use as-is for player, no character
+    # Plain name or opaque handle -- use as-is for player, no character
     parts = name.split()
     player = parts[-1] if len(parts) > 1 else name
     return player, None
 
 
-# ── Stage 5: Write outputs ────────────────────────────────────────────────────
+# -- Stage 5: Write outputs ----------------------------------------------------
 
 def write_roster_file(out_path: pathlib.Path, date_str: str, adventure: dict, roster: list):
     lines = [
-        f"# Session Roster — {date_str}",
+        f"# Session Roster -- {date_str}",
         "",
         f"**Adventure**: {adventure.get('full_title', 'Unknown')}",
         "",
@@ -319,8 +364,8 @@ def write_roster_file(out_path: pathlib.Path, date_str: str, adventure: dict, ro
         lines.append(
             f"| {r['discord_name']} "
             f"| {r['player_name']} "
-            f"| {r.get('character_name') or '—'} "
-            f"| {r.get('character_class') or '—'} |"
+            f"| {r.get('character_name') or '--'} "
+            f"| {r.get('character_class') or '--'} |"
         )
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text("\n".join(lines), encoding="utf-8")
@@ -340,7 +385,7 @@ def write_context_summary(
 
     players_md = "\n".join(
         f"- **{r['player_name']}** as **{r.get('character_name') or '(unnamed)'}**"
-        + (f" — {r['character_class']}" if r.get("character_class") else "")
+        + (f" -- {r['character_class']}" if r.get("character_class") else "")
         for r in players
     )
 
@@ -350,7 +395,7 @@ def write_context_summary(
         warhorn_players = f"\n**Warhorn signups**: {', '.join(names)}"
 
     lines = [
-        f"# Session Context — {notecat['date_str']}",
+        f"# Session Context -- {notecat['date_str']}",
         "",
         "## Adventure",
         f"**Code**: {adventure.get('code', 'Unknown')}",
@@ -389,7 +434,7 @@ def write_context_summary(
     print(f"  Written: {out_path}")
 
 
-# ── Stage 6: Generate achievement images ─────────────────────────────────────
+# -- Stage 6: Generate achievement images -------------------------------------
 
 def generate_images_for_session(session_date_str: str, campaign_dir: pathlib.Path):
     """Read achievement image prompts from the session page and generate badges."""
@@ -438,7 +483,7 @@ def generate_images_for_session(session_date_str: str, campaign_dir: pathlib.Pat
             print(f"    Failed: {e}")
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# -- Main ----------------------------------------------------------------------
 
 def load_campaign(campaign_dir: pathlib.Path) -> dict:
     config_path = campaign_dir / "campaign.yaml"
@@ -451,7 +496,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="scrollcase session pipeline"
     )
-    parser.add_argument("notecat_file", nargs="?", help="NoteCat markdown file")
+    parser.add_argument("notecat_file", nargs="?", help="Transcript file (NoteCat markdown or raw Speaker: text)")
     parser.add_argument(
         "--generate-images",
         metavar="DATE",
@@ -459,14 +504,18 @@ def main():
     )
     parser.add_argument(
         "--campaign-dir",
-        default=os.getenv("PANDODND_CAMPAIGN_DIR"),
-        help="Campaign root directory (must contain campaign.yaml)",
+        default=os.getenv("CAMPAIGN_DIR"),
+        help="Campaign root directory (must contain campaign.yaml). "
+             "Can also be set via CAMPAIGN_DIR in .env.",
     )
     args = parser.parse_args()
 
-    campaign_dir = pathlib.Path(
-        args.campaign_dir or ask("Campaign directory")
-    ).expanduser()
+    if not args.campaign_dir:
+        parser.error(
+            "--campaign-dir is required (or set CAMPAIGN_DIR in .env)"
+        )
+
+    campaign_dir = pathlib.Path(args.campaign_dir).expanduser()
 
     campaign = load_campaign(campaign_dir)
     if campaign:
@@ -496,46 +545,57 @@ def main():
     registry_path = campaign_dir / "dm" / "player-registry.yaml"
     registry = load_registry(registry_path)
 
-    # ── 1. Parse ──
-    print("\n── 1. Parsing NoteCat ──────────────────────────────────")
-    notecat = parse_notecat(notecat_path)
+    # -- 1. Parse --
+    fmt = detect_format(notecat_path)
+    print(f"\n-- 1. Parsing transcript ({fmt}) ----------------------------")
+    if fmt == "notecat":
+        notecat = parse_notecat(notecat_path)
+    else:
+        notecat = parse_raw_transcript(notecat_path)
     print(f"  Date:     {notecat['date_str']}")
     print(f"  Duration: {notecat['duration']}")
-    print(f"  Speakers: {len(notecat['speakers'])} found")
+    print(f"  Speakers: {len(notecat['speakers'])} found - {', '.join(notecat['speakers'])}")
 
-    # ── 2. Warhorn ──
-    print("\n── 2. Warhorn lookup ───────────────────────────────────")
+    # -- 2. Warhorn --
     warhorn_session = None
-    if warhorn_token:
-        warhorn_session = query_warhorn(notecat["date"], warhorn_token, slug_override=warhorn_slug_override)
-
-    if warhorn_session:
-        scenario_name = warhorn_session.get("scenario", {}).get("name", "")
-        print(f"  Session:  {warhorn_session.get('name')}")
-        print(f"  Scenario: {scenario_name}")
+    if warhorn_slug_override:
+        print("\n-- 2. Warhorn lookup ----------------------------------------")
+        if warhorn_token:
+            warhorn_session = query_warhorn(notecat["date"], warhorn_token, slug_override=warhorn_slug_override)
+        if warhorn_session:
+            scenario_name = warhorn_session.get("scenario", {}).get("name", "")
+            print(f"  Session:  {warhorn_session.get('name')}")
+            print(f"  Scenario: {scenario_name}")
+        else:
+            print("  No Warhorn session found for this date")
+            scenario_name = ask("  Adventure code or name")
     else:
-        print("  No Warhorn session found for this date")
-        scenario_name = ask("  Adventure code or name")
+        print("\n-- 2. Warhorn lookup ----------------------- [skipped, no warhorn_slug]")
+        scenario_name = ""
 
-    # ── 3. Catalog ──
-    print("\n── 3. Adventure catalog ────────────────────────────────")
-    adventure = lookup_catalog(catalog_dir, scenario_name) if scenario_name else None
-    if adventure:
-        print(f"  Found: {adventure['full_title']}")
+    # -- 3. Catalog --
+    if warhorn_slug_override or scenario_name:
+        print("\n-- 3. Adventure catalog -------------------------------------")
+        adventure = lookup_catalog(catalog_dir, scenario_name) if scenario_name else None
+        if adventure:
+            print(f"  Found: {adventure['full_title']}")
+        else:
+            print("  Not found in catalog")
+            code = ask("  Adventure code (e.g. PS-DC-PUB-08)")
+            title = ask("  Adventure title")
+            adventure = {"code": code, "title": title, "full_title": f"{code} {title}"}
     else:
-        print("  Not found in catalog")
-        code = ask("  Adventure code (e.g. PS-DC-PUB-08)")
-        title = ask("  Adventure title")
-        adventure = {"code": code, "title": title, "full_title": f"{code} {title}"}
+        print("\n-- 3. Adventure catalog ------------------- [skipped, no warhorn_slug]")
+        adventure = {"code": "", "title": campaign.get("name", ""), "full_title": campaign.get("name", "")}
     adventure["date"] = notecat["date_str"]
 
-    # ── 4. Roster ──
-    print("\n── 4. Roster ───────────────────────────────────────────")
+    # -- 4. Roster --
+    print("\n-- 4. Roster -------------------------------------------")
     roster = build_roster_interactively(notecat["speakers"], registry)
     save_registry(registry_path, registry)
 
-    # ── 5. Write outputs ──
-    print("\n── 5. Writing outputs ──────────────────────────────────")
+    # -- 5. Write outputs --
+    print("\n-- 5. Writing outputs ----------------------------------")
 
     write_roster_file(
         out_path=campaign_dir / "dm" / "sessions" / f"{notecat['date_str']}-roster.md",

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a campaign image (character portrait or other asset) in the pulp adventure style."""
+"""Generate a campaign image (character portrait or other asset)."""
 import os
 import argparse
 import pathlib
@@ -9,14 +9,6 @@ load_dotenv(pathlib.Path(__file__).parent / ".env")
 
 from google import genai
 from google.genai import types
-
-STYLE_PREFIX = (
-    "1930s pulp adventure paperback illustration style, bold linework, "
-    "limited color palette of deep blues and slate grays with stark white snow, "
-    "flat simplified background, dramatic lighting, "
-    "arctic Icewind Dale setting with snow and ice always present, "
-    "absolutely no text, no letters, no words, no labels anywhere in the image — "
-)
 
 CAMPAIGN_DIR = (pathlib.Path(__file__).parent / os.environ["CAMPAIGN_DIR"]).resolve()
 
@@ -29,20 +21,18 @@ TYPE_DIRS = {
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate a campaign image in pulp adventure style")
+    parser = argparse.ArgumentParser(description="Generate a campaign image")
     parser.add_argument("--type", choices=TYPE_DIRS.keys(), default="other",
                         help="Image type determines output directory")
     parser.add_argument("--name", required=True,
                         help="Output filename (without extension)")
     parser.add_argument("--desc", required=True,
-                        help="Character/subject description to append to the style prefix")
+                        help="Full image prompt")
     parser.add_argument("--model", default="imagen-4.0-fast-generate-001",
                         help="Imagen model to use")
-    parser.add_argument("--no-prefix", action="store_true",
-                        help="Skip the standard style prefix and use --desc as the full prompt")
     args = parser.parse_args()
 
-    prompt = args.desc if args.no_prefix else STYLE_PREFIX + args.desc
+    prompt = args.desc
 
     out_dir = TYPE_DIRS[args.type]
     out_dir.mkdir(parents=True, exist_ok=True)

@@ -12,6 +12,16 @@ Turns session recordings into a living campaign record.
 
 Each campaign directory contains a `campaign.yaml` with its settings.
 
+### Campaign directory paths (for `--campaign-dir`)
+
+```
+Icewind Dale:  C:\Users\decha\dev\hoshisabi.github.io\rpg\icewind-dale
+PandoDnD:      C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd
+Greyhawk:      C:\Users\decha\dev\hoshisabi.github.io\rpg\log
+```
+
+`--campaign-dir` on the command line always overrides the `CAMPAIGN_DIR` env var.
+
 ---
 
 ## PandoDnD weekly workflow
@@ -60,7 +70,7 @@ flatten twists and miss things only you know. This is the most important step.
 Once achievement image prompts are confirmed in the session page:
 
 ```
-uv run python process_session.py --generate-images YYYY-MM-DD --campaign-dir "...\pandodnd"
+uv run python process_session.py --generate-images YYYY-MM-DD --campaign-dir "C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd"
 ```
 
 **Step 5 — Publish**
@@ -79,7 +89,7 @@ git push
 ### .env (in this directory)
 ```
 WARHORN_APPLICATION_TOKEN=...
-PANDODND_CAMPAIGN_DIR=C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd
+CAMPAIGN_DIR=C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd
 AL_CATALOG_DIR=C:\Users\decha\dev\al_adventure_catalog\maintaindb\_dc
 GOOGLE_KEY=...
 ```

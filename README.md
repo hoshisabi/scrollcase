@@ -52,7 +52,7 @@ The script handles:
 - Writes `dm/sessions/YYYY-MM-DD-roster.md`
 - Writes `dm/sessions/YYYY-MM-DD-context.md` — the handoff to Claude Code
 
-**Step 2 — Bring into Claude Code**
+**Step 2 — Player recap (Claude Code)**
 
 Open a Claude Code conversation, share the context file path, and ask Claude to:
 1. Read the context file and the NoteCat transcript
@@ -60,12 +60,29 @@ Open a Claude Code conversation, share the context file path, and ask Claude to:
 3. Generate the session recap, player highlights, and achievements
 4. Write the public session page to `public/sessions/YYYY-MM-DD.md`
 
-**Step 3 — DM review**
+**Step 3 — DM prep (fresh Claude conversation)**
 
-Read the draft. Correct anything the AI got wrong about the plot — it will always
-flatten twists and miss things only you know. This is the most important step.
+Open a fresh Claude conversation (not Claude Code — this is a paste workflow).
+Open `dm/sessions/YYYY-MM-DD-dm-prompt.md` and paste its contents.
+Save Claude's response to `dm/sessions/YYYY-MM-DD-prep.md`.
 
-**Step 4 — Achievement images** *(optional)*
+The prompt is pre-filled with your DM name, campaign, date, players, and the paths
+to your wiki files (threads, timeline, PCs, NPCs) and transcript. Claude will produce:
+- Session summary in DM voice
+- Narrative threads, unresolved tensions
+- Player engagement notes and spotlight opportunities
+- Pacing advice and prep recommendations for next session
+- Ready-to-use encounter/scene tools
+
+After saving the prep report, update `dm/threads.md` and `dm/timeline.md` with
+anything new from this session.
+
+**Step 4 — DM review**
+
+Read the player recap draft. Correct anything the AI got wrong about the plot — it
+will always flatten twists and miss things only you know. This is the most important step.
+
+**Step 5 — Achievement images** *(optional)*
 
 Once achievement image prompts are confirmed in the session page:
 
@@ -73,7 +90,7 @@ Once achievement image prompts are confirmed in the session page:
 uv run python process_session.py --generate-images YYYY-MM-DD --campaign-dir "C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd"
 ```
 
-**Step 5 — Publish**
+**Step 6 — Publish**
 
 ```
 cd C:\Users\decha\dev\hoshisabi.github.io
@@ -112,9 +129,19 @@ uv sync
 
 ## Files produced per session
 
+| File | Who writes it | Contents |
+|---|---|---|
+| `dm/sessions/YYYY-MM-DD-roster.md` | Script | Full roster with Discord handles |
+| `dm/sessions/YYYY-MM-DD-context.md` | Script | Handoff summary for Claude Code (player recap) |
+| `dm/sessions/YYYY-MM-DD-dm-prompt.md` | Script | Pre-filled DM assistant prompt — paste into Claude |
+| `dm/sessions/YYYY-MM-DD-prep.md` | Claude (you paste) | DM prep report: threads, player notes, next-session guidance |
+| `dm/sessions/YYYY-MM-DD-debrief.md` | You | Post-session notes: what actually happened, corrections |
+| `public/sessions/YYYY-MM-DD.md` | Claude Code | Player-facing session page |
+| `public/sessions/images/YYYY-MM-DD-*.png` | Script | Achievement badge images |
+
+### dm/ living documents (update after each session)
+
 | File | Contents |
 |---|---|
-| `dm/sessions/YYYY-MM-DD-roster.md` | Full roster with Discord handles |
-| `dm/sessions/YYYY-MM-DD-context.md` | Handoff summary for Claude Code |
-| `public/sessions/YYYY-MM-DD.md` | Player-facing session page |
-| `public/sessions/images/YYYY-MM-DD-*.png` | Achievement badge images |
+| `dm/threads.md` | All active/resolved/background plot threads — the cold-start context doc |
+| `dm/timeline.md` | Flat chronological event log |

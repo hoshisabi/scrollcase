@@ -17,7 +17,7 @@ Stages (normal run):
   2. Warhorn lookup           → session name, scenario  [NoteCat campaigns only]
   3. Adventure catalog        → code, title, metadata   [NoteCat campaigns only]
   4. Roster questions         → interactive, updates player registry
-  5. Write outputs            → DM roster file + context summary for Claude Code
+  5. Write outputs            → DM roster file, context summary, and DM prep prompt
 
 Stage (image run):
   6. Generate achievement images from prompts in the session page
@@ -372,6 +372,86 @@ def write_roster_file(out_path: pathlib.Path, date_str: str, adventure: dict, ro
     print(f"  Written: {out_path}")
 
 
+def write_dm_prep_prompt(
+    out_path: pathlib.Path,
+    notecat: dict,
+    roster: list,
+    campaign_dir: pathlib.Path,
+    campaign: dict,
+):
+    """Write a pre-filled DM assistant prompt ready to paste into a fresh Claude conversation."""
+    script_dir = pathlib.Path(__file__).parent
+    template_path = script_dir / "prompt_dm_assistant.md"
+
+    # Extract the prompt body from between the ``` markers in the template
+    sections_text = ""
+    if template_path.exists():
+        raw = template_path.read_text(encoding="utf-8")
+        parts = raw.split("```")
+        body = parts[1].strip() if len(parts) >= 3 else raw.strip()
+        marker = "Write a DM assistant report"
+        if marker in body:
+            sections_text = body[body.index(marker):]
+
+    dm_name = campaign.get("dm", "Unknown")
+    campaign_name = campaign.get("name", campaign_dir.name)
+
+    players = [r for r in roster if not r.get("is_dm")]
+    players_inline = ", ".join(
+        f"{r['player_name']} playing {r.get('character_name') or '(unnamed)'}"
+        for r in players
+    )
+
+    # Collect wiki file paths that exist on disk
+    wiki_paths = []
+    for stem in ["threads.md", "timeline.md"]:
+        p = campaign_dir / "dm" / stem
+        if p.exists():
+            wiki_paths.append(str(p))
+    pcs_dir = campaign_dir / "dm" / "characters" / "pcs"
+    if pcs_dir.exists():
+        wiki_paths.extend(sorted(str(p) for p in pcs_dir.glob("*.md")))
+    npcs_dir = campaign_dir / "dm" / "characters" / "npcs"
+    if npcs_dir.exists():
+        wiki_paths.extend(sorted(str(p) for p in npcs_dir.glob("*.md")))
+    wiki_block = "\n".join(f"  {p}" for p in wiki_paths) or "  (no wiki files found)"
+
+    save_path = out_path.parent / f"{notecat['date_str']}-prep.md"
+
+    lines = [
+        f"# DM Prep Prompt — {format_date(notecat['date'])}",
+        "",
+        "Paste this into a fresh Claude conversation (separate from the player recap).",
+        "Save Claude's output to:",
+        f"  `{save_path}`",
+        "",
+        "---",
+        "",
+        f"You are a D&D session analyst writing a DM assistant report for {dm_name}, the Dungeon Master.",
+        "",
+        f"Campaign: {campaign_name}",
+        f"Session date: {format_date(notecat['date'])}",
+        f"Players: {dm_name} (DM)" + (f", {players_inline}" if players_inline else ""),
+        "",
+        "<wiki>",
+        "Paste the contents of these files, or in Claude Code ask it to read them:",
+        "",
+        wiki_block,
+        "</wiki>",
+        "",
+        "<transcript>",
+        "Paste the corrected transcript, or in Claude Code share this path:",
+        f"  {notecat['source_path']}",
+        "</transcript>",
+        "",
+        sections_text,
+    ]
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text("\n".join(l for l in lines if l is not None), encoding="utf-8")
+    print(f"  Written: {out_path}")
+
+
 def write_context_summary(
     out_path: pathlib.Path,
     notecat: dict,
@@ -612,8 +692,21 @@ def main():
         warhorn_session=warhorn_session,
     )
 
-    print(f"\n✓ Prep complete. Open the context file in Claude Code to continue:")
-    print(f"  {campaign_dir / 'dm' / 'sessions' / (notecat['date_str'] + '-context.md')}")
+    write_dm_prep_prompt(
+        out_path=campaign_dir / "dm" / "sessions" / f"{notecat['date_str']}-dm-prompt.md",
+        notecat=notecat,
+        roster=roster,
+        campaign_dir=campaign_dir,
+        campaign=campaign,
+    )
+
+    context_path = campaign_dir / "dm" / "sessions" / (notecat["date_str"] + "-context.md")
+    dm_prompt_path = campaign_dir / "dm" / "sessions" / (notecat["date_str"] + "-dm-prompt.md")
+    print(f"\n✓ Prep complete.")
+    print(f"\n  Player recap → open in Claude Code:")
+    print(f"    {context_path}")
+    print(f"\n  DM prep → paste into a fresh Claude conversation:")
+    print(f"    {dm_prompt_path}")
 
 
 if __name__ == "__main__":

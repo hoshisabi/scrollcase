@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
-"""Generate images for campaign wiki pages from frontmatter image_prompt fields.
+"""Generate campaign artwork from frontmatter image_prompt fields or a direct prompt.
 
-Each markdown file may have an image_prompt in its frontmatter — either a string
-(single image) or a list (multiple images, e.g. achievements). Output images are
-written to an images/ subdirectory next to the markdown file, skipping any that
-already exist.
-
-Usage:
+Frontmatter mode (one or more markdown files, or a directory scan):
     uv run python generate_artwork.py public/npcs/clod.md
     uv run python generate_artwork.py --scan npcs
     uv run python generate_artwork.py --scan locations
     uv run python generate_artwork.py --scan characters
+
+One-off mode (prompt provided directly):
+    uv run python generate_artwork.py --prompt "..." --name durok --type npc
 """
 import os
 import time
@@ -31,6 +29,13 @@ SCAN_DIRS = {
     "npcs":       CAMPAIGN_DIR / "public" / "npcs",
     "locations":  CAMPAIGN_DIR / "public" / "locations",
     "sessions":   CAMPAIGN_DIR / "public" / "sessions",
+}
+
+TYPE_DIRS = {
+    "characters": CAMPAIGN_DIR / "public" / "characters" / "images",
+    "npcs":       CAMPAIGN_DIR / "public" / "npcs" / "images",
+    "locations":  CAMPAIGN_DIR / "public" / "locations" / "images",
+    "other":      CAMPAIGN_DIR / "public" / "images",
 }
 
 
@@ -96,11 +101,17 @@ def process_file(md_path: pathlib.Path, client, model: str, delay: float, force:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate wiki artwork from frontmatter image_prompt fields")
+    parser = argparse.ArgumentParser(description="Generate campaign artwork")
     parser.add_argument("files", nargs="*", metavar="FILE",
                         help="Markdown file(s) to process")
     parser.add_argument("--scan", choices=SCAN_DIRS.keys(), metavar="TYPE",
                         help=f"Scan all .md files in a wiki directory ({', '.join(SCAN_DIRS)})")
+    parser.add_argument("--prompt", metavar="TEXT",
+                        help="One-off mode: full image prompt")
+    parser.add_argument("--name", metavar="NAME",
+                        help="One-off mode: output filename without extension (required with --prompt)")
+    parser.add_argument("--type", choices=TYPE_DIRS.keys(), default="other", dest="img_type",
+                        help="One-off mode: output directory type (default: other)")
     parser.add_argument("--model", default="imagen-4.0-fast-generate-001",
                         help="Imagen model to use")
     parser.add_argument("--delay", type=float, default=6.0,
@@ -109,23 +120,31 @@ def main():
                         help="Overwrite existing images")
     args = parser.parse_args()
 
-    if not args.files and not args.scan:
-        parser.error("Provide at least one FILE or use --scan TYPE")
-
-    md_files: list[pathlib.Path] = []
-    if args.scan:
-        md_files.extend(sorted(SCAN_DIRS[args.scan].glob("*.md")))
-    for f in args.files:
-        p = pathlib.Path(f)
-        if not p.is_absolute():
-            p = CAMPAIGN_DIR / p
-        md_files.append(p.resolve())
+    if args.prompt and not args.name:
+        parser.error("--prompt requires --name")
+    if not args.prompt and not args.files and not args.scan:
+        parser.error("Provide FILE(s), --scan TYPE, or --prompt TEXT --name NAME")
 
     client = genai.Client(api_key=os.environ["GOOGLE_KEY"])
-
     total = 0
-    for md_path in md_files:
-        total += process_file(md_path, client, args.model, args.delay, force=args.force)
+
+    if args.prompt:
+        out_path = TYPE_DIRS[args.img_type] / f"{args.name}.png"
+        print(f"\none-off: {args.name} ({args.img_type})")
+        if generate_one(client, args.prompt, out_path, args.model, force=args.force):
+            total += 1
+    else:
+        md_files: list[pathlib.Path] = []
+        if args.scan:
+            md_files.extend(sorted(SCAN_DIRS[args.scan].glob("*.md")))
+        for f in args.files:
+            p = pathlib.Path(f)
+            if not p.is_absolute():
+                p = CAMPAIGN_DIR / p
+            md_files.append(p.resolve())
+
+        for md_path in md_files:
+            total += process_file(md_path, client, args.model, args.delay, force=args.force)
 
     print(f"\nDone. {total} image(s) generated.")
 

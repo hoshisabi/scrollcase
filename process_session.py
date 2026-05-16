@@ -506,7 +506,7 @@ def write_context_summary(
         "3. Write the public session page to:",
         f"   `{out_path.parent.parent.parent / 'public' / 'sessions' / (notecat['date_str'] + '.md')}`",
         "4. Once achievement image prompts are confirmed, run:",
-        f"   `uv run python process_session.py --generate-images {notecat['date_str']}`",
+        f"   `uv run python generate_artwork.py public/sessions/{notecat['date_str']}.md`",
     ]
 
     out_path.parent.mkdir(parents=True, exist_ok=True)

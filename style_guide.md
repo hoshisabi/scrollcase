@@ -21,13 +21,14 @@
 
 ## Standard Prompt Prefix
 
-Use this prefix for all campaign images:
+The campaign-wide style prefix lives in `campaign.yaml` as `image_prompt_prefix`. The generator prepends it automatically to every image; you never repeat it in session or character files.
 
+Current value:
 ```
-1930s pulp adventure paperback illustration style, bold linework, limited color palette of deep blues and slate grays with stark white snow, flat simplified background, dramatic lighting, arctic Icewind Dale setting with snow and ice always present, absolutely no text, no letters, no words, no labels anywhere in the image —
+1930s pulp adventure paperback illustration style, bold linework, limited color palette of deep blues and slate grays with stark white snow, flat simplified background, dramatic lighting, arctic Icewind Dale setting with snow and ice always present, absolutely no text, no letters, no words, no labels anywhere in the image
 ```
 
-Then append the character/subject description.
+A session file can add a per-session refinement via `image_prompt_prefix` in its own frontmatter (appended after the campaign prefix). Leave it out if the campaign default is sufficient.
 
 Note: suppress all text in generated images. Title banners and labels will be added via PIL in post-processing so they are consistent and correct.
 
@@ -50,22 +51,44 @@ Note: suppress all text in generated images. Title banners and labels will be ad
 
 ## Embedding Achievements in Session Pages
 
-Each achievement block follows this pattern:
+Image prompts live in the frontmatter as a YAML list. Each item is the scene-specific part only — the campaign prefix is added automatically at generation time.
+
+```yaml
+---
+image_prompt:
+  - warrior in the snow, bold simple shapes
+  - party fleeing through a blizzard, bold simple shapes
+---
+```
+
+The generator (`generate_artwork.py`) names images `YYYY-MM-DD-1.png`, `YYYY-MM-DD-2.png`, etc., matching the list order.
+
+If this session needs style details beyond the campaign default, add `image_prompt_prefix` to the frontmatter:
+
+```yaml
+image_prompt_prefix: "underground cavern, warm firelight against cold stone"
+```
+
+Each achievement block in the page body:
 
 ```html
-<!-- image_prompt: [full image generation prompt] -->
 <div class="achievement">
-<img class="achievement-badge" src="images/YYYY-MM-DD-achievement-N.png" alt="[achievement title]">
+<img class="achievement-badge" src="images/YYYY-MM-DD-N.png" alt="[achievement title]">
 <p><strong>[Achievement Title]</strong> — [1-2 sentence description of the moment]</p>
 </div>
 ```
 
 Rules:
-- The `<!-- image_prompt: ... -->` comment is parsed by `process_session.py --generate-images` — keep it on its own line, immediately before the `<div>`, in order.
 - Wrap each achievement in `<div class="achievement">` — this creates a flex row (icon left, text right, text never wraps under the icon).
 - Use `<p><strong>...</strong></p>` for the description, not markdown bold — the div is an HTML block so markdown inside it won't render.
 - Use the achievement title as `alt` text, not the full prompt.
 - No `clear:both` div needed after the last achievement — the flex layout doesn't use floats.
+
+To regenerate only one image (e.g. image 3):
+
+```
+uv run python generate_artwork.py public/sessions/YYYY-MM-DD.md --image 3 --force
+```
 
 ## Faction Notes
 

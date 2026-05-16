@@ -28,41 +28,24 @@ that happens you need to refresh the value in `.env`.
 The `ddb-proxy/.env` file was the original home for this; that's now redundant
 and can be ignored.
 
-### Getting the token quickly — bookmarklet
+### Getting the token — Application tab (reliable)
 
-Create a bookmark in your browser with this as the URL. When on any
-dndbeyond.com page while logged in, click it to copy your token to the
-clipboard.
+`CobaltSession` is an **HttpOnly** cookie, so `document.cookie` and DevTools snippets
+cannot read it. Use the Application tab instead:
 
-```
-javascript:(function(){var m=document.cookie.match(/CobaltSession=([^;]+)/);if(m){navigator.clipboard.writeText(m[1]).then(function(){var d=document.createElement('div');d.style='position:fixed;top:20px;right:20px;background:#4CAF50;color:#fff;padding:12px 20px;border-radius:6px;font-family:sans-serif;font-size:14px;z-index:99999;box-shadow:0 2px 8px rgba(0,0,0,0.3)';d.textContent='✓ Cobalt token copied!';document.body.appendChild(d);setTimeout(function(){d.remove()},3000)})}else{alert('CobaltSession not readable (HttpOnly cookie).\nFallback: DevTools > Application > Cookies > dndbeyond.com > CobaltSession')}})()
-```
+1. Open dndbeyond.com and log in
+2. F12 → **Application** tab
+3. Left sidebar: **Storage → Cookies → https://www.dndbeyond.com**
+4. Find the `CobaltSession` row → click it → copy the **Value** column
 
-> **Note:** If DDB has made `CobaltSession` an HttpOnly cookie (meaning
-> JavaScript can't read it), the bookmarklet will show the fallback message.
-> In that case use the DevTools snippet below instead.
+### Alternative — Network tab
 
-### Fallback — DevTools Snippet (save once, run anytime)
+If you don't see it in Application (e.g. it's not listed), trigger any page navigation
+on DDB while the Network tab is open, then:
 
-In Chrome or Edge:  
-F12 → Sources tab → Snippets (left sidebar) → New snippet → paste this → save.
-
-```javascript
-// Run on any dndbeyond.com page while logged in.
-// Opens Application > Cookies automatically and copies the value.
-const allCookies = document.cookie;
-const match = allCookies.match(/CobaltSession=([^;]+)/);
-if (match) {
-  copy(match[1]);
-  console.log('%c✓ Cobalt token copied to clipboard', 'color:green;font-weight:bold');
-  console.log(match[1]);
-} else {
-  console.warn('CobaltSession not found in document.cookie (may be HttpOnly).');
-  console.log('Manual path: DevTools → Application → Cookies → https://www.dndbeyond.com → CobaltSession');
-}
-```
-
-To run a saved snippet: Ctrl+P in DevTools → type `!` → select the snippet name → Enter.
+1. F12 → **Network** tab → click any `dndbeyond.com` request
+2. **Headers** → **Request Headers** → find the `Cookie:` line
+3. Extract the `CobaltSession=<value>` portion from that string
 
 ## Python client
 

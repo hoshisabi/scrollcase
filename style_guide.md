@@ -61,7 +61,15 @@ image_prompt:
 ---
 ```
 
-The generator (`generate_artwork.py`) names images `YYYY-MM-DD-1.png`, `YYYY-MM-DD-2.png`, etc., matching the list order.
+The generator (`generate_artwork.py`, or `process_session.py --generate-images DATE`) names images `YYYY-MM-DD-1.png`, `YYYY-MM-DD-2.png`, etc., matching the list order (single prompt ⇒ `YYYY-MM-DD.png`). Both scripts share the same pipeline.
+
+Optional shield crop for achievement PNGs matches the flex layout icons:
+
+```
+uv run python generate_artwork.py public/sessions/YYYY-MM-DD.md --badge
+```
+
+Use `--badge-only` on markdown that already has images to reshape existing files without regenerating via Imagen. Tunables: `--badge-size`, `--badge-width`, `--badge-color`.
 
 If this session needs style details beyond the campaign default, add `image_prompt_prefix` to the frontmatter:
 
@@ -89,6 +97,8 @@ To regenerate only one image (e.g. image 3):
 ```
 uv run python generate_artwork.py public/sessions/YYYY-MM-DD.md --image 3 --force
 ```
+
+**Legacy prompts:** Older pages may omit frontmatter prompts and instead use HTML comments embedded in the body (`<!-- image_prompt: … -->`). The tooling still discovers those comments **only under** `public/sessions/`; new pages should prefer YAML `image_prompt`.
 
 ## Faction Notes
 

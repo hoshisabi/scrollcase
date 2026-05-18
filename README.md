@@ -84,11 +84,35 @@ will always flatten twists and miss things only you know. This is the most impor
 
 **Step 5 — Achievement images** *(optional)*
 
-Once achievement image prompts are confirmed in the session page:
+Once achievement image prompts are on the session page (`image_prompt` in YAML frontmatter, or legacy HTML comments — see **`style_guide.md`**), generate images with either command; filenames are the same (`public/sessions/images/`).
 
 ```
 uv run python process_session.py --generate-images YYYY-MM-DD --campaign-dir "C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd"
 ```
+
+```
+uv run python generate_artwork.py public/sessions/YYYY-MM-DD.md
+```
+
+Shield-shaped achievement crop (post-process):
+
+```
+uv run python process_session.py --generate-images YYYY-MM-DD --badge --campaign-dir "C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd"
+```
+
+```
+uv run python generate_artwork.py public/sessions/YYYY-MM-DD.md --badge
+```
+
+Apply the shield crop to existing PNGs without calling Imagen:
+
+```
+uv run python generate_artwork.py --badge-only public/sessions/YYYY-MM-DD.md
+```
+
+Overwrite existing PNGs during generation with `--force` on either script (`process_session.py` only accepts `--force` together with `--generate-images`).
+
+**Older session pages:** Earlier versions of `--generate-images` wrote `YYYY-MM-DD-achievement-N.png`. Canonical names are now `YYYY-MM-DD.png` (single prompt) or `YYYY-MM-DD-1.png`, `YYYY-MM-DD-2.png`, … per **`style_guide.md`**. Rename old files and update `<img src=…>` once if you still have the legacy filenames.
 
 **Step 6 — Publish**
 

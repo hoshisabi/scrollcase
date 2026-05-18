@@ -1,7 +1,7 @@
 [project]
 name = "scrollcase"
 version = "0.1.0"
-description = "Add your description here"
+description = "Scripts to turn RPG session transcripts into campaign wiki artifacts and imagery"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

@@ -6,7 +6,7 @@ Does the mechanical work so Claude Code can do the creative work.
 
 Usage:
     uv run python process_session.py <transcript_file>
-    uv run python process_session.py --generate-images <session_date>  (e.g. 2026-05-13)
+    uv run python process_session.py --generate-images <session_date> [--badge] [--force]
 
 Supported transcript formats (auto-detected):
   - NoteCat markdown  (PandoDnD / online campaigns)
@@ -29,7 +29,6 @@ import os
 import pathlib
 import re
 import sys
-import time
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -505,8 +504,11 @@ def write_context_summary(
         "2. Generate the session recap, player highlights, and achievements",
         "3. Write the public session page to:",
         f"   `{out_path.parent.parent.parent / 'public' / 'sessions' / (notecat['date_str'] + '.md')}`",
-        "4. Once achievement image prompts are confirmed, run:",
+        "4. Once achievement image prompts are confirmed, run either:",
+        f"   `uv run python process_session.py --generate-images {notecat['date_str']} --campaign-dir <same path as this script>`",
+        "   or:",
         f"   `uv run python generate_artwork.py public/sessions/{notecat['date_str']}.md`",
+        "   Both write the same filenames under `public/sessions/images/`. Add `--badge` on `process_session.py`, or pass `--badge` to `generate_artwork.py`, for shield cropping.",
     ]
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -516,51 +518,28 @@ def write_context_summary(
 
 # -- Stage 6: Generate achievement images -------------------------------------
 
-def generate_images_for_session(session_date_str: str, campaign_dir: pathlib.Path):
-    """Read achievement image prompts from the session page and generate badges."""
-    from google import genai
-    from google.genai import types
+def generate_images_for_session(
+    session_date_str: str,
+    campaign_dir: pathlib.Path,
+    *,
+    badge: bool = False,
+    force: bool = False,
+) -> None:
+    """Same pipeline as ``generate_artwork.py`` — YAML ``image_prompt`` or session HTML comments."""
+    from generate_artwork import generate_session_images
 
-    session_page = campaign_dir / "public" / "sessions" / f"{session_date_str}.md"
-    if not session_page.exists():
-        sys.exit(f"Session page not found: {session_page}")
-
-    text = session_page.read_text(encoding="utf-8")
-
-    # Find image prompts: lines like  image_prompt: "..."  in the page
-    # Convention: achievements are marked with <!-- image_prompt: ... --> comments
-    # or we look for the achievement badge img tags to find which images are missing
-    prompts = re.findall(r"<!--\s*image_prompt:\s*(.+?)\s*-->", text)
-
-    if not prompts:
-        print("No image prompts found in session page.")
-        print("Add prompts as HTML comments above each achievement:")
-        print("  <!-- image_prompt: bold vintage woodcut... -->")
-        return
-
-    client = genai.Client(api_key=os.getenv("GOOGLE_KEY"))
-    images_dir = campaign_dir / "public" / "sessions" / "images"
-    images_dir.mkdir(parents=True, exist_ok=True)
-
-    for i, prompt in enumerate(prompts):
-        filename = f"{session_date_str}-achievement-{i+1}.png"
-        out_path = images_dir / filename
-        if out_path.exists():
-            print(f"  [{i+1}/{len(prompts)}] Skipping (already exists): {filename}")
-            continue
-        if i > 0:
-            time.sleep(6)
-        print(f"  [{i+1}/{len(prompts)}] Generating: {filename}")
-        try:
-            resp = client.models.generate_images(
-                model="imagen-4.0-fast-generate-001",
-                prompt=prompt,
-                config=types.GenerateImagesConfig(number_of_images=1),
-            )
-            resp.generated_images[0].image.save(out_path)
-            print(f"    Done: {filename}")
-        except Exception as e:
-            print(f"    Failed: {e}")
+    try:
+        total = generate_session_images(
+            campaign_dir=campaign_dir,
+            session_date_str=session_date_str,
+            badge=badge,
+            force=force,
+        )
+    except FileNotFoundError as e:
+        sys.exit(str(e))
+    except ValueError as e:
+        sys.exit(str(e))
+    print(f"\nDone. {total} image(s) generated.")
 
 
 # -- Main ----------------------------------------------------------------------
@@ -583,12 +562,27 @@ def main():
         help="Generate achievement images for a session (YYYY-MM-DD)",
     )
     parser.add_argument(
+        "--badge",
+        action="store_true",
+        help="With --generate-images: shield-crop badges (matches generate_artwork.py --badge)",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="With --generate-images: overwrite existing PNGs",
+    )
+    parser.add_argument(
         "--campaign-dir",
         default=os.getenv("CAMPAIGN_DIR"),
         help="Campaign root directory (must contain campaign.yaml). "
              "Can also be set via CAMPAIGN_DIR in .env.",
     )
     args = parser.parse_args()
+
+    if args.badge and not args.generate_images:
+        parser.error("--badge requires --generate-images DATE")
+    if args.force and not args.generate_images:
+        parser.error("--force requires --generate-images DATE")
 
     if not args.campaign_dir:
         parser.error(
@@ -610,7 +604,12 @@ def main():
 
     # Image generation mode
     if args.generate_images:
-        generate_images_for_session(args.generate_images, campaign_dir)
+        generate_images_for_session(
+            args.generate_images,
+            campaign_dir,
+            badge=args.badge,
+            force=args.force,
+        )
         return
 
     if not args.notecat_file:

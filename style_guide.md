@@ -119,6 +119,23 @@ Wrap each highlight like achievements: **flex row** (portrait left, text right),
 - Put the whole highlight in `<p><strong>Name</strong> — …</p>` — raw markdown bold won’t parse inside the surrounding HTML block the same way once you mix tags; using `<strong>` keeps it reliable.
 - Use a short `alt` (e.g. `Sparrow portrait`).
 
+## Wiki links (optional)
+
+Tooling: **`scrollcase/link_session_entities.py`** adds **first occurrence only** (per wiki slug) links to PCs, NPCs, and locations. It scans `public/characters/`, `public/npcs/`, and `public/locations/` markdown for **`title`** and optional **`also_known_as`** (use this when recap copy uses shorthand: e.g. *River*, *Dr. Medicine*, *Standing Stones*).
+
+- **Linked region**: body from the end of frontmatter through the line before `\n## Achievements` (includes Player Highlights). If `\n## Rewards` appears earlier in that region, only the slice before Rewards is touched (Rewards stay plain). Achievements onward is never modified.
+- **Styles**: Narrative prose becomes `[**Name**](../category/slug)`; highlight lines use `<strong><a href="...">…</a></strong>` on the opening name.
+- Safe skips: fenced \`\`\` blocks, bracket-balanced Markdown links (including awkward nested brackets), existing `<a>…</a>`, and full `<img …>` tags (so `alt` text is untouched).
+
+Example (from repo root):
+
+```text
+uv run python scrollcase/link_session_entities.py PUBLIC/sessions/
+uv run python scrollcase/link_session_entities.py PUBLIC/sessions/YYYY-MM-DD.md --write
+```
+
+The path passed in must live under **`…/public/sessions/`**.
+
 ## Faction Notes
 
 - **Thunlakalaga / Reghed nomads:** Large, powerful humanoids in heavy furs and hides. Practical warrior aesthetics — nothing decorative that doesn't serve a purpose. Think Viking meets arctic survival gear, pulp style.

@@ -100,6 +100,25 @@ uv run python generate_artwork.py public/sessions/YYYY-MM-DD.md --image 3 --forc
 
 **Legacy prompts:** Older pages may omit frontmatter prompts and instead use HTML comments embedded in the body (`<!-- image_prompt: … -->`). The tooling still discovers those comments **only under** `public/sessions/`; new pages should prefer YAML `image_prompt`.
 
+## Player Highlights (portraits)
+
+Wrap each highlight like achievements: **flex row** (portrait left, text right), **no** shield mask — rectangular portrait with the same border radius as achievement icons.
+
+```html
+<div class="highlight">
+<img class="highlight-portrait" src="/rpg/your-campaign/public/characters/images/berg.png" alt="Berg portrait">
+<p><strong>Berg</strong> — [2–4 sentences of recap].</p>
+</div>
+```
+
+**`src`**: copy the URL from that character’s **`image`** field in `public/characters/<slug>.md` (or `public/npcs/...` if the highlight is about an NPC). Paths are usually site-root absolute (`/rpg/...`) or a full **D&D Beyond** avatar URL for drop-in campaigns.
+
+**Markup rules** (same spirit as achievements):
+
+- One `<div class="highlight">` per bullet; portrait + single `<p>...</p>`.
+- Put the whole highlight in `<p><strong>Name</strong> — …</p>` — raw markdown bold won’t parse inside the surrounding HTML block the same way once you mix tags; using `<strong>` keeps it reliable.
+- Use a short `alt` (e.g. `Sparrow portrait`).
+
 ## Faction Notes
 
 - **Thunlakalaga / Reghed nomads:** Large, powerful humanoids in heavy furs and hides. Practical warrior aesthetics — nothing decorative that doesn't serve a purpose. Think Viking meets arctic survival gear, pulp style.

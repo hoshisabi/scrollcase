@@ -501,7 +501,10 @@ def write_context_summary(
         "",
         "In Claude Code, share this file and the transcript path, then ask Claude to:",
         "1. Read the intro segment and confirm/correct the roster",
-        "2. Generate the session recap, player highlights, and achievements",
+        "2. Generate the session recap, player highlights, and achievements.",
+        "   For **Player Highlights**, use `<div class=\"highlight\">`, `<img class=\"highlight-portrait\" src=\"...\">`, "
+        "and `<p><strong>...</strong> — …</p>` — same flex row layout as achievements (see scrollcase **style_guide.md**, *Player Highlights*). "
+        "**src** must match each **`image`** from `public/characters/*.md` or `public/npcs/*.md` when a portrait exists.",
         "3. Write the public session page to:",
         f"   `{out_path.parent.parent.parent / 'public' / 'sessions' / (notecat['date_str'] + '.md')}`",
         "4. Once achievement image prompts are confirmed, run either:",

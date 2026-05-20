@@ -17,7 +17,7 @@ One ordered list spanning **miscprojects** and **hoshisabi.github.io**:
 
 ### 2. Discoverability
 
-Expose the checklist where humans **and Cursor agents** see it first: pick **one** place of truth (e.g. expand this file, add a short section to `style_guide.md`, a workspace rule, or a pointer from `AGENTS.md`).
+Expose the checklist where humans **and agents** see it first: pick **one** place of truth (e.g. expand this file, add a short section to `style_guide.md`, a workspace rule, or a pointer from `AGENTS.md`).
 
 ### 3. Orchestration (optional)
 

@@ -31,6 +31,8 @@ campaign/
     timeline.md                             # session-by-session event log, one line per beat
   public/                                   # published to GitHub Pages
     index.md
+    images/
+      default-portrait.png                  # generic portrait when a PC/NPC has no image (optional; scrollcase can copy the bundled default)
     characters/                             # PCs only
       images/
       [name].md

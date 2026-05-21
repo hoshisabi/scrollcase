@@ -111,7 +111,9 @@ Wrap each highlight like achievements: **flex row** (portrait left, text right),
 </div>
 ```
 
-**`src`**: copy the URL from that character’s **`image`** field in `public/characters/<slug>.md` (or `public/npcs/...` if the highlight is about an NPC). Paths are usually site-root absolute (`/rpg/...`) or a full **D&D Beyond** avatar URL for drop-in campaigns.
+**`src`**: use that character’s **`image`** from `public/characters/<slug>.md` (or `public/npcs/...` for NPC highlights) when set. If there is no **`image`**, use the campaign **generic portrait** — `campaign.yaml` **`default_portrait`** (site-root URL), or by convention **`public/images/default-portrait.png`** under the campaign (`/rpg/<slug>/public/images/default-portrait.png`). Scrollcase ships a starter PNG at **`scrollcase/assets/default-portrait.png`**; `process_session.py` copies it into the campaign the first time you run prep if the file is missing and you have not set a custom `default_portrait` URL.
+
+Paths are usually site-root absolute (`/rpg/...`) or a full **D&D Beyond** avatar URL for drop-in campaigns.
 
 **Markup rules** (same spirit as achievements):
 

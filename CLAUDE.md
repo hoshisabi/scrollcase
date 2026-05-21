@@ -12,6 +12,7 @@ Icewind Dale, PandoDnD, Legends of Greyhawk, etc.—see **`README.md`** for the 
 |--------|------|
 | `process_session.py` | Parses NoteCat / raw transcripts, Warhorn where configured, roster prompts, writes `dm/sessions/*` handoffs; **`--generate-images`** for achievement renders (same filenames as below) |
 | `generate_artwork.py` | Imagen pipelines from YAML `image_prompt` (and legacy HTML comment prompts **only under** `public/sessions/`), optional **`--badge`** shield post-process |
+| `campaign_config.py` | **`default_portrait`** URL resolution; copies **`assets/default-portrait.png`** into `public/images/` when missing |
 
 Known patterns and file layout are summarized in **`README.md`**.
 

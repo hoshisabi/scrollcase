@@ -33,6 +33,11 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import requests
+
+from campaign_config import (
+    default_portrait_url,
+    ensure_campaign_default_portrait_file,
+)
 import yaml
 from dotenv import load_dotenv
 
@@ -50,6 +55,15 @@ def ask(prompt: str, default: str = None) -> str:
     print(f"\n? {prompt}{hint}: ", end="", flush=True)
     answer = input().strip()
     return answer if answer else (default or "")
+
+
+def _noprompt_fail(noprompt: bool, question: str) -> None:
+    if noprompt:
+        print(
+            f'ERROR: Interactive prompt required but --noprompt is set: "{question}"',
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
 
 def slugify(text: str) -> str:
@@ -253,7 +267,15 @@ def save_registry(path: pathlib.Path, registry: list):
     )
 
 
-def resolve_slug(registry: list, player_name: str, discord_name: str) -> str:
+def resolve_slug(
+    registry: list,
+    player_name: str,
+    discord_name: str,
+    *,
+    slug_override: str | None = None,
+    derive_if_missing: bool = False,
+    noprompt: bool = False,
+) -> str:
     name_lower = player_name.lower()
     for entry in registry:
         if entry["display_name"].lower() == name_lower:
@@ -263,8 +285,14 @@ def resolve_slug(registry: list, player_name: str, discord_name: str) -> str:
             return entry["slug"]
 
     default_slug = slugify(player_name.split()[0])
-    print(f"\n  New player: '{player_name}' (Discord: {discord_name})")
-    confirmed_slug = ask("  Page slug (e.g. 'ken')", default=default_slug)
+    if slug_override is not None:
+        confirmed_slug = slug_override
+    elif derive_if_missing:
+        confirmed_slug = default_slug
+    else:
+        print(f"\n  New player: '{player_name}' (Discord: {discord_name})")
+        _noprompt_fail(noprompt, "  Page slug (e.g. 'ken')")
+        confirmed_slug = ask("  Page slug (e.g. 'ken')", default=default_slug)
 
     registry.append({
         "slug": confirmed_slug,
@@ -274,26 +302,129 @@ def resolve_slug(registry: list, player_name: str, discord_name: str) -> str:
     return confirmed_slug
 
 
-def build_roster_interactively(speakers: list, registry: list) -> list:
+def _load_roster_file(path: pathlib.Path) -> list[dict]:
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(data, list):
+        sys.exit(f"Roster file must be a YAML list: {path}")
+    return data
+
+
+def _roster_entry_from_file(entry: dict, registry: list, *, noprompt: bool) -> dict:
+    discord_name = entry["discord_name"]
+    player_name = entry["player_name"]
+    is_dm = bool(entry.get("is_dm"))
+
+    if is_dm:
+        return {
+            "discord_name": discord_name,
+            "player_name": player_name,
+            "character_name": None,
+            "character_class": None,
+            "is_dm": True,
+            "slug": None,
+        }
+
+    character_name = entry.get("character_name") or None
+    character_class = entry.get("character_class") or None
+    slug = entry.get("slug")
+    if slug is not None:
+        resolved_slug = resolve_slug(
+            registry,
+            player_name,
+            discord_name,
+            slug_override=str(slug).strip(),
+            noprompt=noprompt,
+        )
+    else:
+        resolved_slug = resolve_slug(
+            registry,
+            player_name,
+            discord_name,
+            derive_if_missing=True,
+            noprompt=noprompt,
+        )
+
+    return {
+        "discord_name": discord_name,
+        "player_name": player_name,
+        "character_name": character_name,
+        "character_class": character_class,
+        "is_dm": False,
+        "slug": resolved_slug,
+    }
+
+
+def build_roster_from_file(
+    speakers: list,
+    registry: list,
+    roster_path: pathlib.Path,
+    *,
+    noprompt: bool = False,
+) -> list:
+    """Build roster from YAML; prompt interactively for speakers not in the file."""
+    entries = _load_roster_file(roster_path)
+    by_discord = {e["discord_name"]: e for e in entries if e.get("discord_name")}
+
+    print("\n  Speakers found in transcript:")
+    for i, name in enumerate(speakers, 1):
+        print(f"    {i}. {name}")
+
+    roster: list[dict] = []
+    unmatched: list[str] = []
+    dm_set = False
+
+    for discord_name in speakers:
+        file_entry = by_discord.get(discord_name)
+        if file_entry is None:
+            unmatched.append(discord_name)
+            continue
+        print(f"\n  -- {discord_name} -- [roster file]")
+        row = _roster_entry_from_file(file_entry, registry, noprompt=noprompt)
+        roster.append(row)
+        if row.get("is_dm"):
+            dm_set = True
+
+    if unmatched:
+        print(f"\n  {len(unmatched)} speaker(s) not in roster file — interactive prompts follow.")
+        roster.extend(
+            build_roster_interactively(
+                unmatched,
+                registry,
+                noprompt=noprompt,
+                dm_set=dm_set,
+            )
+        )
+
+    return roster
+
+
+def build_roster_interactively(
+    speakers: list,
+    registry: list,
+    *,
+    noprompt: bool = False,
+    dm_set: bool = False,
+) -> list:
     """Ask the DM to identify each speaker and their character."""
     print("\n  Speakers found in transcript:")
     for i, name in enumerate(speakers, 1):
         print(f"    {i}. {name}")
 
     roster = []
-    dm_set = False
 
     for discord_name in speakers:
         print(f"\n  -- {discord_name} --")
 
         is_dm = False
         if not dm_set:
+            _noprompt_fail(noprompt, "  Is this the DM?")
             flag = ask("  Is this the DM?", default="n").lower()
             if flag in ("y", "yes"):
                 is_dm = True
                 dm_set = True
 
         if is_dm:
+            _noprompt_fail(noprompt, "  DM's name")
             player_name = ask("  DM's name", default=discord_name.split()[0])
             roster.append({
                 "discord_name": discord_name,
@@ -308,11 +439,14 @@ def build_roster_interactively(speakers: list, registry: list) -> list:
         # Try to parse player/character from Discord name
         player_name, character_name = _parse_discord_name(discord_name)
 
+        _noprompt_fail(noprompt, "  Player name")
         player_name = ask("  Player name", default=player_name)
+        _noprompt_fail(noprompt, "  Character name")
         character_name = ask("  Character name", default=character_name or "") or None
+        _noprompt_fail(noprompt, "  Class (optional)")
         character_class = ask("  Class (optional)") or None
 
-        slug = resolve_slug(registry, player_name, discord_name)
+        slug = resolve_slug(registry, player_name, discord_name, noprompt=noprompt)
 
         roster.append({
             "discord_name": discord_name,
@@ -457,6 +591,9 @@ def write_context_summary(
     adventure: dict,
     roster: list,
     warhorn_session: Optional[dict],
+    *,
+    campaign_dir: pathlib.Path,
+    campaign: dict,
 ):
     """Write a context file for use in a Claude Code conversation."""
     dm = next((r for r in roster if r.get("is_dm")), None)
@@ -504,7 +641,9 @@ def write_context_summary(
         "2. Generate the session recap, player highlights, and achievements.",
         "   For **Player Highlights**, use `<div class=\"highlight\">`, `<img class=\"highlight-portrait\" src=\"...\">`, "
         "and `<p><strong>...</strong> — …</p>` — same flex row layout as achievements (see scrollcase **style_guide.md**, *Player Highlights*). "
-        "**src** must match each **`image`** from `public/characters/*.md` or `public/npcs/*.md` when a portrait exists.",
+        "**src** for each highlight: the character/NPC **`image`** from `public/characters/*.md` or `public/npcs/*.md` when set; "
+        f"otherwise the campaign generic portrait (`{default_portrait_url(campaign_dir, campaign)}` — "
+        "`campaign.yaml` `default_portrait`, or `public/images/default-portrait.png`).",
         "3. Write the public session page to:",
         f"   `{out_path.parent.parent.parent / 'public' / 'sessions' / (notecat['date_str'] + '.md')}`",
         "4. Once achievement image prompts are confirmed, run either:",
@@ -580,6 +719,22 @@ def main():
         help="Campaign root directory (must contain campaign.yaml). "
              "Can also be set via CAMPAIGN_DIR in .env.",
     )
+    parser.add_argument(
+        "--noprompt",
+        action="store_true",
+        help="Fail instead of prompting interactively (use with --roster-file / --scenario-name)",
+    )
+    parser.add_argument(
+        "--roster-file",
+        type=pathlib.Path,
+        metavar="PATH",
+        help="YAML roster entries keyed by discord_name (see style_guide / README)",
+    )
+    parser.add_argument(
+        "--scenario-name",
+        metavar="TEXT",
+        help="Adventure/scenario name when Warhorn lookup fails or is skipped",
+    )
     args = parser.parse_args()
 
     if args.badge and not args.generate_images:
@@ -597,6 +752,9 @@ def main():
     campaign = load_campaign(campaign_dir)
     if campaign:
         print(f"\nCampaign: {campaign.get('name', campaign_dir.name)} (DM: {campaign.get('dm', '?')})")
+    copied = ensure_campaign_default_portrait_file(campaign_dir, campaign)
+    if copied:
+        print(f"  Generic portrait: copied scrollcase default → {copied.relative_to(campaign_dir)}")
 
     # Resolve catalog dir: campaign.yaml > env var
     catalog_dir_raw = campaign.get("catalog_dir") or os.getenv("AL_CATALOG_DIR")
@@ -617,6 +775,9 @@ def main():
 
     if not args.notecat_file:
         parser.error("notecat_file is required unless --generate-images is used")
+
+    if args.roster_file and not args.roster_file.exists():
+        parser.error(f"Roster file not found: {args.roster_file}")
 
     notecat_path = pathlib.Path(args.notecat_file).expanduser()
     if not notecat_path.exists():
@@ -650,10 +811,14 @@ def main():
             print(f"  Scenario: {scenario_name}")
         else:
             print("  No Warhorn session found for this date")
-            scenario_name = ask("  Adventure code or name")
+            if args.scenario_name:
+                scenario_name = args.scenario_name
+            else:
+                _noprompt_fail(args.noprompt, "  Adventure code or name")
+                scenario_name = ask("  Adventure code or name")
     else:
         print("\n-- 2. Warhorn lookup ----------------------- [skipped, no warhorn_slug]")
-        scenario_name = ""
+        scenario_name = args.scenario_name or ""
 
     # -- 3. Catalog --
     if warhorn_slug_override or scenario_name:
@@ -663,7 +828,9 @@ def main():
             print(f"  Found: {adventure['full_title']}")
         else:
             print("  Not found in catalog")
+            _noprompt_fail(args.noprompt, "  Adventure code (e.g. PS-DC-PUB-08)")
             code = ask("  Adventure code (e.g. PS-DC-PUB-08)")
+            _noprompt_fail(args.noprompt, "  Adventure title")
             title = ask("  Adventure title")
             adventure = {"code": code, "title": title, "full_title": f"{code} {title}"}
     else:
@@ -673,7 +840,19 @@ def main():
 
     # -- 4. Roster --
     print("\n-- 4. Roster -------------------------------------------")
-    roster = build_roster_interactively(notecat["speakers"], registry)
+    if args.roster_file:
+        roster = build_roster_from_file(
+            notecat["speakers"],
+            registry,
+            args.roster_file.expanduser(),
+            noprompt=args.noprompt,
+        )
+    else:
+        roster = build_roster_interactively(
+            notecat["speakers"],
+            registry,
+            noprompt=args.noprompt,
+        )
     save_registry(registry_path, registry)
 
     # -- 5. Write outputs --
@@ -692,6 +871,8 @@ def main():
         adventure=adventure,
         roster=roster,
         warhorn_session=warhorn_session,
+        campaign_dir=campaign_dir,
+        campaign=campaign,
     )
 
     write_dm_prep_prompt(

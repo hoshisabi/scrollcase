@@ -10,7 +10,7 @@ Turns session recordings into a living campaign record.
 | `rpg/pandodnd/` | PandoDnD Online Campaign | Dan | drop-in one-shots |
 | `rpg/log/` | Legends of Greyhawk | Bryan | campaign (Dan plays) |
 
-Each campaign directory contains a `campaign.yaml` with its settings.
+Each campaign directory contains a `campaign.yaml` with its settings. Optional **`default_portrait`**: site-root URL for the generic character portrait used when a wiki page or session highlight has no **`image`**. If omitted, the site and tooling use **`/rpg/<slug>/public/images/default-portrait.png`**; scrollcase can copy **`assets/default-portrait.png`** into that path on first `process_session.py` run.
 
 ### Campaign directory paths (for `--campaign-dir`)
 
@@ -42,6 +42,17 @@ Greyhawk:      C:\Users\decha\dev\hoshisabi.github.io\rpg\log
 cd C:\Users\decha\dev\miscprojects\scrollcase
 uv run python process_session.py "D:\downloads\<notecat-file>.md" --campaign-dir "C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd"
 ```
+
+Non-interactive (Claude Code skill pre-fills a roster YAML):
+
+```
+uv run python process_session.py "<notecat-file>.md" --campaign-dir "<campaign>" \
+  --roster-file dm/sessions/YYYY-MM-DD-roster-input.yaml \
+  --scenario-name "PS-DC-PUB-08 Unremembered Things" \
+  --noprompt
+```
+
+`--noprompt` exits with an error if any speaker is missing from `--roster-file` or catalog/Warhorn data is still needed. `--scenario-name` is used when Warhorn lookup fails or is skipped (ignored when Warhorn returns a scenario).
 
 The script handles:
 - Parsing the NoteCat markdown (date, speakers, intro)

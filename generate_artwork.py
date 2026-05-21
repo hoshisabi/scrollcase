@@ -383,6 +383,12 @@ def main():
                         help=f"Border ring width in pixels at output size (default: {BADGE_WIDTH_DEFAULT})")
     parser.add_argument("--badge-color", default="d2a032", metavar="RRGGBB",
                         help="Border color as hex (default: d2a032, warm amber)")
+    parser.add_argument(
+        "--campaign-dir",
+        type=pathlib.Path,
+        metavar="PATH",
+        help="Campaign root directory (overrides CAMPAIGN_DIR from .env)",
+    )
     args = parser.parse_args()
 
     if args.prompt and not args.name:
@@ -394,7 +400,10 @@ def main():
     if not args.prompt and not args.files and not args.scan:
         parser.error("Provide FILE(s), --scan TYPE, or --prompt TEXT --name NAME")
 
-    campaign_root = campaign_root_from_env()
+    if args.campaign_dir is not None:
+        campaign_root = args.campaign_dir.expanduser().resolve()
+    else:
+        campaign_root = campaign_root_from_env()
     scan_directories = scan_dirs(campaign_root)
     type_directories = type_dirs(campaign_root)
 

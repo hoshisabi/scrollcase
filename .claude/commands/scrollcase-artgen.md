@@ -12,7 +12,7 @@ Generate achievement badge images for a session page. Reads the image_prompt lis
 
 | Thing | Path |
 |---|---|
-| scrollcase scripts | `C:\Users\decha\dev\miscprojects\scrollcase` |
+| scrollcase scripts | `C:\Users\decha\dev\scrollcase` |
 
 ## Step 1 — Find the session page
 
@@ -49,7 +49,7 @@ Also ask: "Shield-crop the badges? (yes / no — adds the heraldic border)"
 ## Step 3 — Run generation
 
 ```powershell
-cd C:\Users\decha\dev\miscprojects\scrollcase
+cd C:\Users\decha\dev\scrollcase
 uv run python generate_artwork.py `
   "<campaign-dir>\public\sessions\<YYYY-MM-DD>.md" `
   --campaign-dir "<campaign-dir>" `

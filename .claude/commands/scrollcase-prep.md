@@ -10,7 +10,7 @@ Process a TTRPG session through scrollcase: find unprocessed files in the inbox,
 | pandodnd campaign | `C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd` |
 | icewind-dale campaign | `C:\Users\decha\dev\hoshisabi.github.io\rpg\icewind-dale` |
 | log campaign | `C:\Users\decha\dev\hoshisabi.github.io\rpg\log` |
-| scrollcase scripts | `C:\Users\decha\dev\miscprojects\scrollcase` |
+| scrollcase scripts | `C:\Users\decha\dev\scrollcase` |
 
 ## Step 1 — Find unprocessed files
 
@@ -130,7 +130,7 @@ Show the file contents and ask: "Ready to run? (yes / no)"
 ## Step 9 — Run the pipeline
 
 ```powershell
-cd C:\Users\decha\dev\miscprojects\scrollcase
+cd C:\Users\decha\dev\scrollcase
 uv run python process_session.py "<inbox-transcript-path>" `
   --campaign-dir "<campaign-dir>" `
   --roster-file "<campaign-dir>\dm\sessions\YYYY-MM-DD-roster-input.yaml" `

@@ -10,7 +10,11 @@ One-off mode (prompt provided directly):
     uv run python generate_artwork.py --prompt "..." --name durok --type npc
 
 Prefix layering (applied additively, outermost first):
-    --prefix → campaign.yaml image_prompt_prefix → frontmatter image_prompt_prefix → per-image prompt
+    --prefix → campaign.yaml image_prompt_base → [tag]-expanded per-image prompt
+
+Tag expansion: [tag] markers in a prompt are replaced inline with context from campaign.yaml
+image_prompt_tags. Tags may appear anywhere in the prompt string (prefix, mid, suffix).
+No tag → default tag context prepended. Old-style image_prompt_prefix is still supported.
 
 To replace the composed prompt entirely for all images, use --prompt-override "full text".
 To regenerate only one image from a list, use --image N (1-based) with a single FILE argument.
@@ -148,12 +152,68 @@ def parse_frontmatter(path: pathlib.Path) -> dict:
     return yaml.safe_load(text[3:end]) or {}
 
 
-def load_campaign_prefix(campaign_root: pathlib.Path) -> str:
+def load_campaign_prompt_config(campaign_root: pathlib.Path) -> tuple[str, dict[str, str], str]:
+    """Return (base, tags, default_tag).
+
+    New style: image_prompt_base + image_prompt_tags dict (with optional 'default' key).
+    Old style: image_prompt_prefix — returned as base with empty tags for backward compat.
+    """
     config = campaign_root / "campaign.yaml"
     if not config.exists():
-        return ""
+        return "", {}, "exterior"
     data = yaml.safe_load(config.read_text(encoding="utf-8")) or {}
-    return (data.get("image_prompt_prefix") or "").strip()
+
+    base = (data.get("image_prompt_base") or "").strip()
+    raw_tags = data.get("image_prompt_tags") or {}
+
+    if base and raw_tags:
+        default_tag = str(raw_tags.get("default", "exterior"))
+        tag_map = {k: v for k, v in raw_tags.items() if k != "default"}
+        return base, tag_map, default_tag
+
+    # Backward compat: flat image_prompt_prefix, no tag system
+    prefix = (data.get("image_prompt_prefix") or "").strip()
+    return prefix, {}, ""
+
+
+def load_campaign_prefix(campaign_root: pathlib.Path) -> str:
+    """Legacy wrapper — returns the effective default prefix as a flat string."""
+    base, tags, default_tag = load_campaign_prompt_config(campaign_root)
+    if not tags:
+        return base
+    context = (tags.get(default_tag) or "").strip()
+    return ", ".join(p for p in [base, context] if p)
+
+
+_ANY_TAG_RE = re.compile(r"\[(\w+)\]\s*")
+
+
+def expand_prompt_tags(prompt: str, tags: dict[str, str], default_tag: str) -> str:
+    """Expand [tag] markers inline into their context strings.
+
+    Tags may appear anywhere in the prompt — prefix, suffix, or mid-sentence.
+    Each [tag] is replaced with its context text at that position.
+    If no [tag] markers are present, the default tag context is prepended.
+    If tags dict is empty (old-style campaign), the prompt is returned unchanged.
+    """
+    if not tags:
+        return prompt  # backward compat: no tag system active
+
+    if not _ANY_TAG_RE.search(prompt):
+        # No explicit tags — prepend default context
+        context = (tags.get(default_tag) or "").strip()
+        return f"{context}, {prompt}" if context else prompt
+
+    def replace(m: re.Match) -> str:
+        context = (tags.get(m.group(1)) or "").strip()
+        return f", {context}, " if context else ""
+
+    expanded = _ANY_TAG_RE.sub(replace, prompt)
+    expanded = re.sub(r"\s*,\s*,\s*", ", ", expanded)  # double commas
+    expanded = re.sub(r"\s+,", ",", expanded)           # space before comma
+    expanded = re.sub(r"^\s*,\s*", "", expanded)        # leading comma
+    expanded = re.sub(r"\s*,\s*$", "", expanded)        # trailing comma
+    return expanded.strip()
 
 
 def collect_image_prompts(md_path: pathlib.Path) -> tuple[list[str], str]:
@@ -266,7 +326,9 @@ def process_file(
     delay: float,
     force: bool = False,
     cli_prefix: str = "",
-    campaign_prefix: str = "",
+    campaign_base: str = "",
+    campaign_tags: dict[str, str] | None = None,
+    campaign_default_tag: str = "",
     prompt_override: str = "",
     image_index: int = None,
     badge_opts: dict | None = None,
@@ -292,10 +354,12 @@ def process_file(
     print(f"\n{md_path.relative_to(root)}  ({len(prompts)} prompt(s))")
 
     generated = 0
+    tags = campaign_tags or {}
     for i, (per_image, out_path) in enumerate(zip(prompts, paths)):
         if i > 0:
             time.sleep(delay)
-        final_prompt = build_prompt(per_image, cli_prefix, campaign_prefix, file_prefix, prompt_override)
+        expanded = expand_prompt_tags(per_image, tags, campaign_default_tag)
+        final_prompt = build_prompt(expanded, cli_prefix, campaign_base, file_prefix, prompt_override)
         if generate_one(client, final_prompt, out_path, model, force=force, badge_opts=badge_opts):
             generated += 1
 
@@ -333,7 +397,7 @@ def generate_session_images(
         raise ValueError("GOOGLE_KEY missing (env or scrollcase/.env)")
 
     client = genai.Client(api_key=key)
-    campaign_prefix = load_campaign_prefix(campaign_dir)
+    campaign_base, campaign_tags, campaign_default_tag = load_campaign_prompt_config(campaign_dir)
     badge_opts = (
         badge_kwargs_from_hex(badge_color_hex, size=badge_size, width=badge_width) if badge else None
     )
@@ -343,7 +407,9 @@ def generate_session_images(
         model,
         delay,
         force=force,
-        campaign_prefix=campaign_prefix,
+        campaign_base=campaign_base,
+        campaign_tags=campaign_tags,
+        campaign_default_tag=campaign_default_tag,
         campaign_root=campaign_dir,
         badge_opts=badge_opts,
     )
@@ -427,7 +493,7 @@ def main():
 
     badge_opts_for_gen = badge_opts if args.badge else None
 
-    campaign_prefix = load_campaign_prefix(campaign_root)
+    campaign_base, campaign_tags, campaign_default_tag = load_campaign_prompt_config(campaign_root)
     client = genai.Client(api_key=os.environ["GOOGLE_KEY"])
     total = 0
 
@@ -454,7 +520,9 @@ def main():
                 args.delay,
                 force=args.force,
                 cli_prefix=args.prefix or "",
-                campaign_prefix=campaign_prefix,
+                campaign_base=campaign_base,
+                campaign_tags=campaign_tags,
+                campaign_default_tag=campaign_default_tag,
                 prompt_override=args.prompt_override or "",
                 image_index=args.image_index,
                 badge_opts=badge_opts_for_gen,

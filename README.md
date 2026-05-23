@@ -39,7 +39,7 @@ Greyhawk:      C:\Users\decha\dev\hoshisabi.github.io\rpg\log
 **Step 1 — Run the prep script**
 
 ```
-cd C:\Users\decha\dev\miscprojects\scrollcase
+cd C:\Users\decha\dev\scrollcase
 uv run python process_session.py "D:\downloads\<notecat-file>.md" --campaign-dir "C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd"
 ```
 

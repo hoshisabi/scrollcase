@@ -6,12 +6,12 @@ Mechanical steps should chain in a predictable order so recap writing stays huma
 
 ### 1. End-to-end checklist (write this up)
 
-One ordered list spanning **miscprojects** and **hoshisabi.github.io**:
+One ordered list spanning **scrollcase** and **hoshisabi.github.io**:
 
 1. **Transcript / prep** — run `process_session.py` (and any campaign-specific steps) for dates, roster/context, prompts, etc.
 2. **Recap page** — add or update `rpg/<campaign>/public/sessions/YYYY-MM-DD.md` (frontmatter, narrative, Player Highlights, Achievements).
 3. **Wiki aliases** — add `also_known_as` on wiki YAML when recaps use shorthand names.
-4. **Wiki links** — `uv run python scrollcase/link_session_entities.py <path-to/sessions> --write` (session file or directory under `public/sessions/`).
+4. **Wiki links** — `uv run python link_session_entities.py <path-to/sessions> --write` (session file or directory under `public/sessions/`).
 5. **Achievement art** — `generate_artwork.py` and/or `process_session.py --generate-images` as needed.
 6. **Verify** — `bundle exec jekyll build` from the site repo root.
 

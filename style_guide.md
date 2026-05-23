@@ -111,7 +111,7 @@ Wrap each highlight like achievements: **flex row** (portrait left, text right),
 </div>
 ```
 
-**`src`**: use that character’s **`image`** from `public/characters/<slug>.md` (or `public/npcs/...` for NPC highlights) when set. If there is no **`image`**, use the campaign **generic portrait** — `campaign.yaml` **`default_portrait`** (site-root URL), or by convention **`public/images/default-portrait.png`** under the campaign (`/rpg/<slug>/public/images/default-portrait.png`). Scrollcase ships a starter PNG at **`scrollcase/assets/default-portrait.png`**; `process_session.py` copies it into the campaign the first time you run prep if the file is missing and you have not set a custom `default_portrait` URL.
+**`src`**: use that character’s **`image`** from `public/characters/<slug>.md` (or `public/npcs/...` for NPC highlights) when set. If there is no **`image`**, use the campaign **generic portrait** — `campaign.yaml` **`default_portrait`** (site-root URL), or by convention **`public/images/default-portrait.png`** under the campaign (`/rpg/<slug>/public/images/default-portrait.png`). Scrollcase ships a starter PNG at **`assets/default-portrait.png`**; `process_session.py` copies it into the campaign the first time you run prep if the file is missing and you have not set a custom `default_portrait` URL.
 
 Paths are usually site-root absolute (`/rpg/...`) or a full **D&D Beyond** avatar URL for drop-in campaigns.
 
@@ -123,7 +123,7 @@ Paths are usually site-root absolute (`/rpg/...`) or a full **D&D Beyond** avata
 
 ## Wiki links (optional)
 
-Tooling: **`scrollcase/link_session_entities.py`** adds **first occurrence only** (per wiki slug) links to PCs, NPCs, and locations. It scans `public/characters/`, `public/npcs/`, and `public/locations/` markdown for **`title`** and optional **`also_known_as`** (use this when recap copy uses shorthand: e.g. *River*, *Dr. Medicine*, *Standing Stones*).
+Tooling: **`link_session_entities.py`** adds **first occurrence only** (per wiki slug) links to PCs, NPCs, and locations. It scans `public/characters/`, `public/npcs/`, and `public/locations/` markdown for **`title`** and optional **`also_known_as`** (use this when recap copy uses shorthand: e.g. *River*, *Dr. Medicine*, *Standing Stones*).
 
 - **Linked region**: body from the end of frontmatter through the line before `\n## Achievements` (includes Player Highlights). If `\n## Rewards` appears earlier in that region, only the slice before Rewards is touched (Rewards stay plain). Achievements onward is never modified.
 - **Styles**: Narrative prose becomes `[**Name**](../category/slug)`; highlight lines use `<strong><a href="...">…</a></strong>` on the opening name.
@@ -132,8 +132,8 @@ Tooling: **`scrollcase/link_session_entities.py`** adds **first occurrence only*
 Example (from repo root):
 
 ```text
-uv run python scrollcase/link_session_entities.py PUBLIC/sessions/
-uv run python scrollcase/link_session_entities.py PUBLIC/sessions/YYYY-MM-DD.md --write
+uv run python link_session_entities.py PUBLIC/sessions/
+uv run python link_session_entities.py PUBLIC/sessions/YYYY-MM-DD.md --write
 ```
 
 The path passed in must live under **`…/public/sessions/`**.

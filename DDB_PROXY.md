@@ -23,7 +23,7 @@ The proxy authenticates using the value of the `CobaltSession` cookie from a
 logged-in D&D Beyond browser session. DDB signs you out periodically; when
 that happens you need to refresh the value in `.env`.
 
-**Canonical location:** `scrollcase/.env` as `COBALT_COOKIE=<value>`
+**Canonical location:** `.env` in this repo as `COBALT_COOKIE=<value>`
 
 The `ddb-proxy/.env` file was the original home for this; that's now redundant
 and can be ignored.
@@ -49,7 +49,7 @@ on DDB while the Network tab is open, then:
 
 ## Python client
 
-`scrollcase/ddb_client.py` wraps all proxy endpoints. It reads `COBALT_COOKIE`
+`ddb_client.py` wraps all proxy endpoints. It reads `COBALT_COOKIE`
 and optionally `DDB_PROXY_URL` from `.env`.
 
 ```python

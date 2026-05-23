@@ -1,6 +1,6 @@
 # scrollcase
 
-Personal TTRPG session chronicle tool in this repo (`miscprojects/scrollcase`). It turns transcripts into markdown handoffs for AI-assisted recaps plus optional artwork generation. Campaign wikis and site content live separately (typically `hoshisabi.github.io`); scrollcase assumes a **`CAMPAIGN_DIR`** (or **`--campaign-dir`**) pointing at a campaign root with `campaign.yaml`, `dm/`, and `public/`.
+Personal TTRPG session chronicle tool. It turns transcripts into markdown handoffs for AI-assisted recaps plus optional artwork generation. Campaign wikis and site content live separately (typically `hoshisabi.github.io`); scrollcase assumes a **`CAMPAIGN_DIR`** (or **`--campaign-dir`**) pointing at a campaign root with `campaign.yaml`, `dm/`, and `public/`.
 
 ## Campaigns using this toolchain
 

@@ -1,6 +1,41 @@
-# Scrollcase Campaign Style Guide — Icewind Dale
+# Scrollcase Campaign Style Guide
 
-## Visual Style
+---
+
+*Sections marked **[all campaigns]** apply everywhere. Sections marked **[Icewind Dale]** are campaign-specific.*
+
+---
+
+## Session Titles [all campaigns]
+
+Every session page has a `session_title` — an AI-generated title that captures the personality of that specific session. For sessions based on published adventures, an `adventure_title` field also names the official module.
+
+```yaml
+session_title: Concussive Charisma          # always present — AI-generated
+adventure_title: Darkness in Nulb           # published adventures only
+```
+
+**Display convention:** when both fields are present, render as:
+
+> *Adventure Title*, or *Session Title*
+
+Example: *Darkness in Nulb, or Concussive Charisma*
+
+When only `session_title` is present (home campaigns, one-shots without a published name), display the session title alone.
+
+**When to use each:**
+
+| Campaign | `session_title` | `adventure_title` |
+|---|---|---|
+| Icewind Dale | Always (AI-generated) | Only if a published module is being run |
+| PandoDnD | Always (AI-generated) | Always — official AL module name from Warhorn/catalog |
+| Legends of Greyhawk | Always (AI-generated) | Only if a published module is being run |
+
+The `session_title` is generated during the recap step. For PandoDnD, `adventure_title` comes from the context file (Warhorn/catalog lookup). For home campaigns, omit `adventure_title` unless the session is explicitly running a published module.
+
+---
+
+## Visual Style [Icewind Dale]
 
 **Reference:** 1930s–40s pulp adventure paperback covers. Doc Savage, early Robert E. Howard illustrations, adventure magazines of the era.
 
@@ -19,7 +54,7 @@
 - Soft gradients and painterly blending (this is pulp, not fine art)
 - Modern fantasy art conventions (lens flare, particle effects, etc.)
 
-## Standard Prompt Prefix
+## Standard Prompt Prefix [Icewind Dale]
 
 The campaign-wide style prefix lives in `campaign.yaml` as `image_prompt_prefix`. The generator prepends it automatically to every image; you never repeat it in session or character files.
 
@@ -32,7 +67,7 @@ A session file can add a per-session refinement via `image_prompt_prefix` in its
 
 Note: suppress all text in generated images. Title banners and labels will be added via PIL in post-processing so they are consistent and correct.
 
-## Character Prompt Templates
+## Character Prompt Templates [all campaigns]
 
 ### PCs
 ```
@@ -49,7 +84,7 @@ Note: suppress all text in generated images. Title banners and labels will be ad
 [PREFIX] small circular badge icon, [achievement description], bold simple shapes
 ```
 
-## Embedding Achievements in Session Pages
+## Embedding Achievements in Session Pages [all campaigns]
 
 Image prompts live in the frontmatter as a YAML list. Each item is the scene-specific part only — the campaign prefix is added automatically at generation time.
 
@@ -100,7 +135,7 @@ uv run python generate_artwork.py public/sessions/YYYY-MM-DD.md --image 3 --forc
 
 **Legacy prompts:** Older pages may omit frontmatter prompts and instead use HTML comments embedded in the body (`<!-- image_prompt: … -->`). The tooling still discovers those comments **only under** `public/sessions/`; new pages should prefer YAML `image_prompt`.
 
-## Player Highlights (portraits)
+## Player Highlights (portraits) [all campaigns]
 
 Wrap each highlight like achievements: **flex row** (portrait left, text right), **no** shield mask — rectangular portrait with the same border radius as achievement icons.
 
@@ -121,7 +156,7 @@ Paths are usually site-root absolute (`/rpg/...`) or a full **D&D Beyond** avata
 - Put the whole highlight in `<p><strong>Name</strong> — …</p>` — raw markdown bold won’t parse inside the surrounding HTML block the same way once you mix tags; using `<strong>` keeps it reliable.
 - Use a short `alt` (e.g. `Sparrow portrait`).
 
-## Wiki links (optional)
+## Wiki links (optional) [all campaigns]
 
 Tooling: **`link_session_entities.py`** adds **first occurrence only** (per wiki slug) links to PCs, NPCs, and locations. It scans `public/characters/`, `public/npcs/`, and `public/locations/` markdown for **`title`** and optional **`also_known_as`** (use this when recap copy uses shorthand: e.g. *River*, *Dr. Medicine*, *Standing Stones*).
 
@@ -138,13 +173,13 @@ uv run python link_session_entities.py PUBLIC/sessions/YYYY-MM-DD.md --write
 
 The path passed in must live under **`…/public/sessions/`**.
 
-## Faction Notes
+## Faction Notes [Icewind Dale]
 
 - **Thunlakalaga / Reghed nomads:** Large, powerful humanoids in heavy furs and hides. Practical warrior aesthetics — nothing decorative that doesn't serve a purpose. Think Viking meets arctic survival gear, pulp style.
 - **The Owlbear (Frostclaw):** White and crimson, 14 feet tall. Should feel like a pulp monster — iconic silhouette, not photorealistic creature design.
 - **Netherese ruins:** Cold stone, geometric patterns, deep shadows. Occasional magical glow should be amber or pale blue.
 
-## Color Palette
+## Color Palette [Icewind Dale]
 
 | Use | Colors |
 |-----|--------|

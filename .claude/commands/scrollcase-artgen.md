@@ -1,6 +1,6 @@
 Generate achievement badge images for a session page. Reads the image_prompt list from the session page frontmatter, shows the prompts for review and adjustment before spending API calls, then generates and optionally shield-crops the images.
 
-`$ARGUMENTS` may contain a campaign name (`pandodnd`, `icewind-dale`, `log`) and/or a date (`YYYY-MM-DD`). If omitted, find the most recent session page that has image prompts but no generated images yet.
+`$ARGUMENTS` may contain a campaign name (`pandodnd`, `icewind-dale`, `log`), a date (`YYYY-MM-DD`), and/or `--badge` / `--no-badge` to pre-answer the shield-crop question. If omitted, find the most recent session page that has image prompts but no generated images yet.
 
 ## Paths
 
@@ -44,7 +44,7 @@ Any prompts to adjust before generating? (or "ok" to proceed)
 
 If the user edits any prompts, update the session page frontmatter with the corrected text before running generation. Re-show the updated prompt(s) and confirm.
 
-Also ask: "Shield-crop the badges? (yes / no — adds the heraldic border)"
+Also ask: "Shield-crop the badges? (yes / no — adds the heraldic border)" — skip this question if `--badge` or `--no-badge` was passed in `$ARGUMENTS`.
 
 ## Step 3 — Run generation
 

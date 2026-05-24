@@ -510,6 +510,7 @@ def write_dm_prep_prompt(
     notecat: dict,
     roster: list,
     campaign_dir: pathlib.Path,
+    dm_dir: pathlib.Path,
     campaign: dict,
 ):
     """Write a pre-filled DM assistant prompt ready to paste into a fresh Claude conversation."""
@@ -538,13 +539,13 @@ def write_dm_prep_prompt(
     # Collect wiki file paths that exist on disk
     wiki_paths = []
     for stem in ["threads.md", "timeline.md"]:
-        p = campaign_dir / "dm" / stem
+        p = dm_dir / stem
         if p.exists():
             wiki_paths.append(str(p))
-    pcs_dir = campaign_dir / "dm" / "characters" / "pcs"
+    pcs_dir = dm_dir / "characters" / "pcs"
     if pcs_dir.exists():
         wiki_paths.extend(sorted(str(p) for p in pcs_dir.glob("*.md")))
-    npcs_dir = campaign_dir / "dm" / "characters" / "npcs"
+    npcs_dir = dm_dir / "characters" / "npcs"
     if npcs_dir.exists():
         wiki_paths.extend(sorted(str(p) for p in npcs_dir.glob("*.md")))
     wiki_block = "\n".join(f"  {p}" for p in wiki_paths) or "  (no wiki files found)"
@@ -645,7 +646,7 @@ def write_context_summary(
         f"otherwise the campaign generic portrait (`{default_portrait_url(campaign_dir, campaign)}` — "
         "`campaign.yaml` `default_portrait`, or `public/images/default-portrait.png`).",
         "3. Write the public session page to:",
-        f"   `{out_path.parent.parent.parent / 'public' / 'sessions' / (notecat['date_str'] + '.md')}`",
+        f"   `{campaign_dir / 'public' / 'sessions' / (notecat['date_str'] + '.md')}`",
         "4. Once achievement image prompts are confirmed, run either:",
         f"   `uv run python process_session.py --generate-images {notecat['date_str']} --campaign-dir <same path as this script>`",
         "   or:",
@@ -720,6 +721,12 @@ def main():
              "Can also be set via CAMPAIGN_DIR in .env.",
     )
     parser.add_argument(
+        "--dm-dir",
+        default=os.getenv("DM_DIR"),
+        help="Private DM notes directory. Defaults to <campaign-dir>/dm. "
+             "Can also be set via DM_DIR in .env.",
+    )
+    parser.add_argument(
         "--noprompt",
         action="store_true",
         help="Fail instead of prompting interactively (use with --roster-file / --scenario-name)",
@@ -748,6 +755,7 @@ def main():
         )
 
     campaign_dir = pathlib.Path(args.campaign_dir).expanduser()
+    dm_dir = pathlib.Path(args.dm_dir).expanduser() if args.dm_dir else campaign_dir / "dm"
 
     campaign = load_campaign(campaign_dir)
     if campaign:
@@ -785,7 +793,7 @@ def main():
 
     warhorn_token = os.getenv("WARHORN_APPLICATION_TOKEN", "")
 
-    registry_path = campaign_dir / "dm" / "player-registry.yaml"
+    registry_path = dm_dir / "player-registry.yaml"
     registry = load_registry(registry_path)
 
     # -- 1. Parse --
@@ -859,14 +867,14 @@ def main():
     print("\n-- 5. Writing outputs ----------------------------------")
 
     write_roster_file(
-        out_path=campaign_dir / "dm" / "sessions" / f"{notecat['date_str']}-roster.md",
+        out_path=dm_dir / "sessions" / f"{notecat['date_str']}-roster.md",
         date_str=notecat["date_str"],
         adventure=adventure,
         roster=roster,
     )
 
     write_context_summary(
-        out_path=campaign_dir / "dm" / "sessions" / f"{notecat['date_str']}-context.md",
+        out_path=dm_dir / "sessions" / f"{notecat['date_str']}-context.md",
         notecat=notecat,
         adventure=adventure,
         roster=roster,
@@ -876,15 +884,16 @@ def main():
     )
 
     write_dm_prep_prompt(
-        out_path=campaign_dir / "dm" / "sessions" / f"{notecat['date_str']}-dm-prompt.md",
+        out_path=dm_dir / "sessions" / f"{notecat['date_str']}-dm-prompt.md",
         notecat=notecat,
         roster=roster,
         campaign_dir=campaign_dir,
+        dm_dir=dm_dir,
         campaign=campaign,
     )
 
-    context_path = campaign_dir / "dm" / "sessions" / (notecat["date_str"] + "-context.md")
-    dm_prompt_path = campaign_dir / "dm" / "sessions" / (notecat["date_str"] + "-dm-prompt.md")
+    context_path = dm_dir / "sessions" / (notecat["date_str"] + "-context.md")
+    dm_prompt_path = dm_dir / "sessions" / (notecat["date_str"] + "-dm-prompt.md")
     print(f"\n✓ Prep complete.")
     print(f"\n  Player recap → open in Claude Code:")
     print(f"    {context_path}")

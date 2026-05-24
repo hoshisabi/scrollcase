@@ -8,11 +8,11 @@
 
 ## Session Titles [all campaigns]
 
-Every session page has a `session_title` — an AI-generated title that captures the personality of that specific session. For sessions based on published adventures, an `adventure_title` field also names the official module.
+Every session page has a `session_title` — an AI-generated title that captures the personality of that specific session. For sessions based on published adventures, an `adventure` field also names the official module.
 
 ```yaml
 session_title: Concussive Charisma          # always present — AI-generated
-adventure_title: Darkness in Nulb           # published adventures only
+adventure: Darkness in Nulb                 # published adventures only
 ```
 
 **Display convention:** when both fields are present, render as:
@@ -25,13 +25,13 @@ When only `session_title` is present (home campaigns, one-shots without a publis
 
 **When to use each:**
 
-| Campaign | `session_title` | `adventure_title` |
+| Campaign | `session_title` | `adventure` |
 |---|---|---|
 | Icewind Dale | Always (AI-generated) | Only if a published module is being run |
 | PandoDnD | Always (AI-generated) | Always — official AL module name from Warhorn/catalog |
 | Legends of Greyhawk | Always (AI-generated) | Only if a published module is being run |
 
-The `session_title` is generated during the recap step. For PandoDnD, `adventure_title` comes from the context file (Warhorn/catalog lookup). For home campaigns, omit `adventure_title` unless the session is explicitly running a published module.
+The `session_title` is generated during the recap step. For PandoDnD, `adventure` comes from the context file (Warhorn/catalog lookup). For home campaigns, omit `adventure` unless the session is explicitly running a published module.
 
 ---
 
@@ -53,6 +53,34 @@ The `session_title` is generated during the recap step. For PandoDnD, `adventure
 - Busy, detailed backgrounds
 - Soft gradients and painterly blending (this is pulp, not fine art)
 - Modern fantasy art conventions (lens flare, particle effects, etc.)
+
+## Image Prompt Tags [all campaigns]
+
+Image prompts can include `[tag]` markers that expand to campaign-specific descriptions at generation time. This lets prompts stay scene-focused while the campaign's visual vocabulary handles the environmental context.
+
+Tags are defined in `campaign.yaml` under `image_prompt_tags`:
+
+```yaml
+image_prompt_tags:
+  interior: "interior scene, inside a structure, warm enclosed space"
+  exterior: "exterior scene, outdoors, open sky"
+```
+
+Use a tag anywhere in an `image_prompt` item:
+
+```yaml
+image_prompt:
+  - "[interior] characters huddled around a fire in a tavern"
+  - "[exterior] party crossing a frozen lake at dusk"
+```
+
+If a prompt has **no tag**, the campaign's `default_tag` (defaults to `"exterior"`) is prepended automatically — so untagged prompts get the exterior context without requiring every prompt to spell it out.
+
+If a campaign doesn't define `image_prompt_tags`, the tag system is silently skipped and prompts pass through unchanged — fully backwards compatible.
+
+**When to add tags to a campaign:** any time interior vs. exterior (or other environmental distinctions) would meaningfully change the generated image. Campaigns with a single dominant setting (all-outdoor, all-dungeon) may not need them.
+
+---
 
 ## Standard Prompt Prefix [Icewind Dale]
 

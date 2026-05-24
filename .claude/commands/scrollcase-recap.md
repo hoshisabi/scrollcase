@@ -101,7 +101,38 @@ Apply all corrections before proceeding. Re-show only the changed sections, not 
 
 Write the approved draft to `public/sessions/YYYY-MM-DD.md`.
 
-## Step 6 — Create or update character pages
+## Step 6 — Update site _data/ files
+
+The site root is two levels up from the campaign dir (e.g. `rpg\pandodnd` → `hoshisabi.github.io`). All three known campaign dirs have this layout.
+
+### _data/recent_session.yml
+
+Rewrite the file completely using data from the session page just written:
+
+```yaml
+# The "Latest session" teaser on the landing page.
+# Update this after each session you want to highlight.
+campaign: <campaign.yaml name>
+session_label: Session <N>
+date: <Month D, YYYY>
+title: <session_title frontmatter from session page>
+adventure_code: <adventure frontmatter from session page>
+href: /rpg/<campaign-slug>/public/sessions/<YYYY-MM-DD>
+excerpt: >-
+  <description frontmatter from session page, reflowed to ~80 chars>
+```
+
+- `campaign-slug` comes from `campaign.yaml slug` (e.g. `icewind-dale`, `pandodnd`)
+- `session_label` uses the same N computed in Step 2
+- `date` is the human-readable form of the session date: `Month D, YYYY`
+
+### _data/campaigns.yml
+
+Read the file, find the entry in `running:` whose `href` contains the campaign slug, increment its `sessions:` count by 1, then recompute `stats.sessions_logged` as the sum of `sessions:` across all entries in `running:`. Write the file back.
+
+If no matching entry is found, print a warning and skip the update rather than modifying the wrong entry.
+
+## Step 7 — Create or update character pages
 
 Character pages are **per character**, not per player. A player who has appeared before with a different character still gets a fresh page for the new one. The `player:` frontmatter field is the only link between a player and their characters — there are no player pages (may be added later).
 
@@ -134,11 +165,11 @@ _Note: drop-in roster; this page grows when the character appears in recaps._
 
 Do not touch any other content in an existing character page. Do not update pages for characters who did **not** appear in this session.
 
-## Step 7 — Hand off
+## Step 8 — Hand off
 
 List the files written. Then:
 
 "Done. Next steps:
 1. Generate achievement images — run `/scrollcase-artgen` (or see the commands in the context file)
 2. DM prep — open `dm/sessions/YYYY-MM-DD-dm-prompt.md` and paste into a fresh Claude conversation
-3. When both are done, commit and push `rpg/<campaign>/`"
+3. When both are done, commit and push — include both `rpg/<campaign>/` and `_data/`"

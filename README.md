@@ -2,6 +2,26 @@
 
 Turns session recordings into a living campaign record.
 
+## Repository layout
+
+Two repos work together:
+
+| Repo | Contents |
+|---|---|
+| `hoshisabi.github.io` | Public site — `rpg/*/public/` and `rpg/*/campaign.yaml` |
+| `hoshisabi-dm` | Private DM notes — one subdirectory per campaign |
+
+Clone both as siblings:
+```
+dev/
+  hoshisabi.github.io/
+  hoshisabi-dm/
+```
+
+`rpg/*/dm/` is gitignored in the public site repo. All dm content lives in `hoshisabi-dm`.
+
+---
+
 ## Campaigns
 
 | Directory | Campaign | DM | Type |
@@ -12,15 +32,23 @@ Turns session recordings into a living campaign record.
 
 Each campaign directory contains a `campaign.yaml` with its settings. Optional **`default_portrait`**: site-root URL for the generic character portrait used when a wiki page or session highlight has no **`image`**. If omitted, the site and tooling use **`/rpg/<slug>/public/images/default-portrait.png`**; scrollcase can copy **`assets/default-portrait.png`** into that path on first `process_session.py` run.
 
-### Campaign directory paths (for `--campaign-dir`)
+### Campaign directory paths
 
 ```
-Icewind Dale:  C:\Users\decha\dev\hoshisabi.github.io\rpg\icewind-dale
-PandoDnD:      C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd
-Greyhawk:      C:\Users\decha\dev\hoshisabi.github.io\rpg\log
+Icewind Dale:
+  --campaign-dir  C:\Users\decha\dev\hoshisabi.github.io\rpg\icewind-dale
+  --dm-dir        C:\Users\decha\dev\hoshisabi-dm\icewind-dale
+
+PandoDnD:
+  --campaign-dir  C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd
+  --dm-dir        C:\Users\decha\dev\hoshisabi-dm\pandodnd
+
+Greyhawk (LoG):
+  --campaign-dir  C:\Users\decha\dev\hoshisabi.github.io\rpg\log
+  --dm-dir        C:\Users\decha\dev\hoshisabi-dm\log
 ```
 
-`--campaign-dir` on the command line always overrides the `CAMPAIGN_DIR` env var.
+`--campaign-dir` and `--dm-dir` on the command line always override env vars.
 
 ---
 
@@ -40,15 +68,18 @@ Greyhawk:      C:\Users\decha\dev\hoshisabi.github.io\rpg\log
 
 ```
 cd C:\Users\decha\dev\scrollcase
-uv run python process_session.py "D:\downloads\<notecat-file>.md" --campaign-dir "C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd"
+uv run python process_session.py "D:\downloads\<notecat-file>.md" ^
+  --campaign-dir "C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd" ^
+  --dm-dir "C:\Users\decha\dev\hoshisabi-dm\pandodnd"
 ```
 
 Non-interactive (Claude Code skill pre-fills a roster YAML):
 
 ```
-uv run python process_session.py "<notecat-file>.md" --campaign-dir "<campaign>" \
-  --roster-file dm/sessions/YYYY-MM-DD-roster-input.yaml \
-  --scenario-name "PS-DC-PUB-08 Unremembered Things" \
+uv run python process_session.py "<notecat-file>.md" ^
+  --campaign-dir "<campaign>" --dm-dir "<dm>" ^
+  --roster-file dm/sessions/YYYY-MM-DD-roster-input.yaml ^
+  --scenario-name "PS-DC-PUB-08 Unremembered Things" ^
   --noprompt
 ```
 
@@ -98,7 +129,8 @@ will always flatten twists and miss things only you know. This is the most impor
 Once achievement image prompts are on the session page (`image_prompt` in YAML frontmatter, or legacy HTML comments — see **`style_guide.md`**), generate images with either command; filenames are the same (`public/sessions/images/`).
 
 ```
-uv run python process_session.py --generate-images YYYY-MM-DD --campaign-dir "C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd"
+uv run python process_session.py --generate-images YYYY-MM-DD ^
+  --campaign-dir "C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd"
 ```
 
 ```
@@ -108,7 +140,8 @@ uv run python generate_artwork.py public/sessions/YYYY-MM-DD.md
 Shield-shaped achievement crop (post-process):
 
 ```
-uv run python process_session.py --generate-images YYYY-MM-DD --badge --campaign-dir "C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd"
+uv run python process_session.py --generate-images YYYY-MM-DD --badge ^
+  --campaign-dir "C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd"
 ```
 
 ```
@@ -125,9 +158,25 @@ Overwrite existing PNGs during generation with `--force` on either script (`proc
 
 **Older session pages:** Earlier versions of `--generate-images` wrote `YYYY-MM-DD-achievement-N.png`. Canonical names are now `YYYY-MM-DD.png` (single prompt) or `YYYY-MM-DD-1.png`, `YYYY-MM-DD-2.png`, … per **`style_guide.md`**. Rename old files and update `<img src=…>` once if you still have the legacy filenames.
 
-**Step 6 — Publish**
+**Step 6 — Save and publish**
 
+Push DM notes to the private repo:
 ```
+C:\Users\decha\dev\hoshisabi.github.io\scripts\dm-push.ps1 "session YYYY-MM-DD"
+```
+
+Push the public site:
+```
+C:\Users\decha\dev\hoshisabi.github.io\scripts\site-push.ps1 "session YYYY-MM-DD"
+```
+
+Or run both manually:
+```
+cd C:\Users\decha\dev\hoshisabi-dm
+git add pandodnd\sessions\
+git commit -m "session YYYY-MM-DD"
+git push
+
 cd C:\Users\decha\dev\hoshisabi.github.io
 git add rpg/pandodnd/
 git commit -m "session YYYY-MM-DD"
@@ -138,10 +187,17 @@ git push
 
 ## Setup
 
-### .env (in this directory)
+### Clone both repos
+```
+git clone https://github.com/hoshisabi/hoshisabi.github.io.git
+git clone https://github.com/hoshisabi/hoshisabi-dm.git
+```
+
+### .env (in the scrollcase directory)
 ```
 WARHORN_APPLICATION_TOKEN=...
 CAMPAIGN_DIR=C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd
+DM_DIR=C:\Users\decha\dev\hoshisabi-dm\pandodnd
 AL_CATALOG_DIR=C:\Users\decha\dev\al_adventure_catalog\maintaindb\_dc
 GOOGLE_KEY=...
 ```
@@ -173,6 +229,9 @@ uv sync
 | `dm/sessions/YYYY-MM-DD-debrief.md` | You | Post-session notes: what actually happened, corrections |
 | `public/sessions/YYYY-MM-DD.md` | Claude Code | Player-facing session page |
 | `public/sessions/images/YYYY-MM-DD-*.png` | Script | Achievement badge images |
+
+`dm/` paths are relative to `--dm-dir` (i.e., inside `hoshisabi-dm/<campaign>/`).
+`public/` paths are relative to `--campaign-dir` (i.e., inside `hoshisabi.github.io/rpg/<campaign>/`).
 
 ### dm/ living documents (update after each session)
 

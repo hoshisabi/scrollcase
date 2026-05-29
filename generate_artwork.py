@@ -51,6 +51,7 @@ def scan_dirs(root: pathlib.Path) -> dict[str, pathlib.Path]:
         "npcs": root / "public" / "npcs",
         "locations": root / "public" / "locations",
         "sessions": root / "public" / "sessions",
+        "items": root / "public" / "items",
     }
 
 
@@ -59,6 +60,7 @@ def type_dirs(root: pathlib.Path) -> dict[str, pathlib.Path]:
         "characters": root / "public" / "characters" / "images",
         "npcs": root / "public" / "npcs" / "images",
         "locations": root / "public" / "locations" / "images",
+        "items": root / "public" / "items" / "images",
         "other": root / "public" / "images",
     }
 
@@ -419,13 +421,13 @@ def main():
     parser = argparse.ArgumentParser(description="Generate campaign artwork")
     parser.add_argument("files", nargs="*", metavar="FILE",
                         help="Markdown file(s) to process")
-    parser.add_argument("--scan", choices=("characters", "npcs", "locations", "sessions"), metavar="TYPE",
+    parser.add_argument("--scan", choices=("characters", "npcs", "locations", "sessions", "items"), metavar="TYPE",
                         help="Scan all .md files in a wiki directory")
     parser.add_argument("--prompt", metavar="TEXT",
                         help="One-off mode: full image prompt (no prefix layering applied)")
     parser.add_argument("--name", metavar="NAME",
                         help="One-off mode: output filename without extension (required with --prompt)")
-    parser.add_argument("--type", choices=("characters", "npcs", "locations", "other"), default="other", dest="img_type",
+    parser.add_argument("--type", choices=("characters", "npcs", "locations", "items", "other"), default="other", dest="img_type",
                         help="One-off mode: output directory type (default: other)")
     parser.add_argument("--model", default="imagen-4.0-fast-generate-001",
                         help="Imagen model to use")

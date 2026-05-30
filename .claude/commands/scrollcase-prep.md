@@ -1,6 +1,6 @@
 Process a TTRPG session through scrollcase: find unprocessed files in the inbox, identify the campaign, build the roster interactively, run the prep pipeline non-interactively, then move files into the campaign subfolder as a completion signal.
 
-`$ARGUMENTS` may contain a campaign name (`pandodnd`, `icewind-dale`, `log`), a date (`YYYY-MM-DD`), or both — use them to narrow the search. If omitted, auto-detect.
+`$ARGUMENTS` may contain a campaign name (`pandodnd`, `icewind-dale`, `log`), a date (`YYYY-MM-DD`), a filesystem path to a source directory, or any combination — use them to narrow the search. If omitted, auto-detect.
 
 ## Paths
 
@@ -10,17 +10,26 @@ Process a TTRPG session through scrollcase: find unprocessed files in the inbox,
 | pandodnd campaign | `C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd` |
 | icewind-dale campaign | `C:\Users\decha\dev\hoshisabi.github.io\rpg\icewind-dale` |
 | log campaign | `C:\Users\decha\dev\hoshisabi.github.io\rpg\log` |
+| pandodnd DM dir | `C:\Users\decha\dev\hoshisabi-dm\pandodnd` |
+| icewind-dale DM dir | `C:\Users\decha\dev\hoshisabi-dm\icewind-dale` |
+| log DM dir | `C:\Users\decha\dev\hoshisabi-dm\log` |
 | scrollcase scripts | `C:\Users\decha\dev\scrollcase` |
+
+The **campaign dir** (passed as `--campaign-dir`) is the public site path — it contains `campaign.yaml` and `public/`. The **DM dir** (passed as `--dm-dir`) is the private repo path — it contains `sessions/`, `player-registry.yaml`, and `characters/`.
 
 ## Step 1 — Find unprocessed files
 
-List all `.md` files **directly in the inbox root** (not in subfolders). These are unprocessed sessions.
+Determine the **source directory**:
+- If `$ARGUMENTS` is a filesystem path (contains `\` or `/`, or starts with a drive letter), use it as the source directory.
+- Otherwise use the standard inbox: `D:\GoogleDrive\chapmand\My Drive\scrollcase\`
+
+List all transcript files **directly in the source directory** (not in subfolders). Transcripts are `.md` files (NoteCat) or `.txt` files (SessionKeeper). These are unprocessed sessions.
 
 - If `$ARGUMENTS` contains a date, narrow to files whose name contains that date.
-- If multiple `.md` files are found, show the list and ask the user which to process.
+- If multiple transcript files are found, show the list and ask the user which to process.
 - If none are found, say so and stop.
 
-Also collect any other files in the inbox root: `.ogg` audio files and `fvtt-Actor-*.json` Foundry exports. These travel with the session and will be moved at the end.
+Also collect any companion files in the source directory: `.ogg`/`.aac` audio files and `fvtt-Actor-*.json` Foundry exports. These travel with the session.
 
 ## Step 2 — Detect format and campaign
 
@@ -39,7 +48,7 @@ If `$ARGUMENTS` names a campaign, use it. Otherwise propose your best guess and 
 ## Step 3 — Read the transcript
 
 Read the first 120 lines of the file. Extract:
-- Session date (from `**Date**:` header for NoteCat; from filename or content for raw)
+- Session date (from `**Date**:` header for NoteCat; from filename or content for raw — SessionKeeper filenames often encode the date as `MMDDYY`, e.g. `session_transcript_053026.txt` → 2026-05-30)
 - Speaker list — deduplicated, in order of first appearance
   - NoteCat: the `**Handle**` names from speaker lines (not italicised presence lines)
   - Raw: the `Name:` prefixes from dialogue lines
@@ -48,7 +57,7 @@ Read the first 120 lines of the file. Extract:
 
 ## Step 4 — Extract Foundry character data (if JSONs present)
 
-For each `fvtt-Actor-*.json` in the inbox root, use PowerShell to extract key fields. Files are large — do not read directly; use `ConvertFrom-Json` and select only what you need. Run all extractions in parallel:
+For each `fvtt-Actor-*.json` in the source directory, use PowerShell to extract key fields. Files are large — do not read directly; use `ConvertFrom-Json` and select only what you need. Run all extractions in parallel:
 
 ```powershell
 $j    = Get-Content "<path>" -Raw | ConvertFrom-Json
@@ -64,16 +73,17 @@ Build a lookup table keyed by character name for use in roster building.
 
 ## Step 5 — Load the player registry
 
-Read `<campaign-dir>/dm/player-registry.yaml`. Build a lookup: discord alias → registry entry (slug, display_name). If the file doesn't exist yet, treat it as empty.
+Read `<dm-dir>/player-registry.yaml`. Build a lookup: discord alias → registry entry (slug, display_name). If the file doesn't exist yet, treat it as empty.
 
 ## Step 6 — Propose the roster
 
 For each speaker, combine what you know:
 - Registry match on discord alias → known player name and slug
+- Character files at `<dm-dir>/characters/pcs/` — read matching files for class, race, and full character name
 - Summary/intro lines → character name hint
 - Foundry JSON → character name, class, race (match by name similarity or intro mention)
 - Campaign DM (from `campaign.yaml` `dm:` field) — the DM won't have a Foundry export; for NoteCat, their handle is often a real name like "Dan Chapman (he/him)"
-- For **raw/SessionKeeper format**: speakers are already real names, so roster work is lighter — mainly confirm character names and flag the DM
+- For **raw/SessionKeeper format**: speakers are character names already; roster work is mainly confirming class/race from character files and flagging the DM
 
 Present the proposed roster as a table and ask the user to confirm or correct it:
 
@@ -103,7 +113,7 @@ Skip this step for campaigns without Warhorn (`icewind-dale`, `log`) — pass an
 
 ## Step 8 — Write the roster input file
 
-Write `<campaign-dir>/dm/sessions/YYYY-MM-DD-roster-input.yaml`:
+Write `<dm-dir>/sessions/YYYY-MM-DD-roster-input.yaml`:
 
 ```yaml
 - discord_name: "exact handle as it appears in the transcript"
@@ -130,10 +140,12 @@ Show the file contents and ask: "Ready to run? (yes / no)"
 ## Step 9 — Run the pipeline
 
 ```powershell
+$env:PYTHONUTF8 = "1"
 cd C:\Users\decha\dev\scrollcase
-uv run python process_session.py "<inbox-transcript-path>" `
+uv run python process_session.py "<source-transcript-path>" `
   --campaign-dir "<campaign-dir>" `
-  --roster-file "<campaign-dir>\dm\sessions\YYYY-MM-DD-roster-input.yaml" `
+  --dm-dir "<dm-dir>" `
+  --roster-file "<dm-dir>\sessions\YYYY-MM-DD-roster-input.yaml" `
   --scenario-name "<confirmed name>" `
   --noprompt
 ```
@@ -144,18 +156,20 @@ Show the output. If the script errors, report the message and stop — do not re
 
 ## Step 10 — Move files to campaign subfolder
 
-On success, move all files that were in the inbox root to the campaign subfolder:
+**Only applies when the source is the standard inbox** (`D:\GoogleDrive\chapmand\My Drive\scrollcase\`). If the source was an override path from `$ARGUMENTS`, skip this step.
+
+On success, move all files that were collected in Step 1 to the campaign subfolder:
 
 ```powershell
 $dest = "D:\GoogleDrive\chapmand\My Drive\scrollcase\<campaign>\"
 Move-Item "D:\GoogleDrive\chapmand\My Drive\scrollcase\<transcript>" $dest
-# move any .ogg and fvtt-Actor-*.json files collected in Step 1
+# move any audio and fvtt-Actor-*.json files collected in Step 1
 ```
 
 Only move the files identified in Step 1 — do not sweep the entire root in case another session was dropped in while this one was being processed.
 
 ## Step 11 — Hand off
 
-List the files written by the script (it prints them) and confirm the files were moved. Then:
+List the files written by the script (it prints them) and confirm any files were moved. Then:
 
 "Prep complete. When you're ready for the player recap, open a fresh conversation and run `/scrollcase-recap`."

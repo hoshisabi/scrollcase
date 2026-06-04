@@ -369,6 +369,15 @@ def build_roster_from_file(
     for i, name in enumerate(speakers, 1):
         print(f"    {i}. {name}")
 
+    # No speaker labels in transcript (e.g. timestamp-only audio) — use all roster entries directly
+    if not speakers:
+        print("  (No speaker labels in transcript — using roster file entries directly.)")
+        roster = []
+        for entry in entries:
+            row = _roster_entry_from_file(entry, registry, noprompt=noprompt)
+            roster.append(row)
+        return roster
+
     roster: list[dict] = []
     unmatched: list[str] = []
     dm_set = False
@@ -836,11 +845,18 @@ def main():
             print(f"  Found: {adventure['full_title']}")
         else:
             print("  Not found in catalog")
-            _noprompt_fail(args.noprompt, "  Adventure code (e.g. PS-DC-PUB-08)")
-            code = ask("  Adventure code (e.g. PS-DC-PUB-08)")
-            _noprompt_fail(args.noprompt, "  Adventure title")
-            title = ask("  Adventure title")
-            adventure = {"code": code, "title": title, "full_title": f"{code} {title}"}
+            if args.noprompt and scenario_name:
+                parts = scenario_name.split(None, 1)
+                code = parts[0] if parts else ""
+                title = parts[1] if len(parts) > 1 else scenario_name
+                adventure = {"code": code, "title": title, "full_title": scenario_name}
+                print(f"  Using scenario name directly: {adventure['full_title']}")
+            else:
+                _noprompt_fail(args.noprompt, "  Adventure code (e.g. PS-DC-PUB-08)")
+                code = ask("  Adventure code (e.g. PS-DC-PUB-08)")
+                _noprompt_fail(args.noprompt, "  Adventure title")
+                title = ask("  Adventure title")
+                adventure = {"code": code, "title": title, "full_title": f"{code} {title}"}
     else:
         print("\n-- 3. Adventure catalog ------------------- [skipped, no warhorn_slug]")
         adventure = {"code": "", "title": campaign.get("name", ""), "full_title": campaign.get("name", "")}

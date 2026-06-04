@@ -71,6 +71,40 @@ $hp   = "$($j.system.attributes.hp.value)/$($j.system.attributes.hp.max)"
 
 Build a lookup table keyed by character name for use in roster building.
 
+### DDB proxy — authoritative character data
+
+When Foundry JSONs are present and the DDB proxy is running, **always prefer DDB data over Foundry** — Foundry exports can be stale (wrong level, wrong subclass, wrong race). Use DDB whenever a character ID is available.
+
+**Check the proxy is up:** `Invoke-RestMethod http://localhost:3000/ping` → returns `pong`.
+
+**Extract the DDB character ID from each Foundry JSON:**
+```powershell
+$ddbId = $j.flags.ddbimporter.dndbeyond.characterId
+```
+
+**Fetch all characters in parallel:**
+```powershell
+$body = @{ characterId = $ddbId; cobalt = $cobalt } | ConvertTo-Json
+$r = Invoke-RestMethod "http://localhost:3000/proxy/character" -Method POST -Body $body -ContentType "application/json" -TimeoutSec 15
+$c = $r.ddb.character
+$name    = $c.name
+$race    = $c.race.fullName
+$classes = ($c.classes | ForEach-Object { "$($_.definition.name) Lv$($_.level) [$($_.subclassDefinition.name)]" }) -join " / "
+```
+
+**Cobalt token:** stored in `C:\Users\decha\dev\ddb-proxy\.env`. For public characters an empty string works (`$cobalt = ""`). To load it cleanly from the file in PowerShell:
+```powershell
+$cobalt = (Get-Content "C:\Users\decha\dev\ddb-proxy\.env" |
+           Where-Object { $_ -match '^[^#].*=' } |
+           Select-Object -First 1) -replace '^[^=]+=', '' -replace '"', ''
+```
+Or with Python's dotenv if you need it in a script context:
+```python
+from dotenv import load_dotenv
+load_dotenv(r"C:\Users\decha\dev\ddb-proxy\.env")
+cobalt = os.getenv("COBALT_TOKEN", "")
+```
+
 ## Step 5 — Load the player registry
 
 Read `<dm-dir>/player-registry.yaml`. Build a lookup: discord alias → registry entry (slug, display_name). If the file doesn't exist yet, treat it as empty.
@@ -81,7 +115,7 @@ For each speaker, combine what you know:
 - Registry match on discord alias → known player name and slug
 - Character files at `<dm-dir>/characters/pcs/` — read matching files for class, race, and full character name
 - Summary/intro lines → character name hint
-- Foundry JSON → character name, class, race (match by name similarity or intro mention)
+- Foundry JSON → character name, class, race (match by name similarity or intro mention); **DDB proxy data overrides Foundry when both are available** — see Step 4
 - Campaign DM (from `campaign.yaml` `dm:` field) — the DM won't have a Foundry export; for NoteCat, their handle is often a real name like "Dan Chapman (he/him)"
 - For **raw/SessionKeeper format**: speakers are character names already; roster work is mainly confirming class/race from character files and flagging the DM
 

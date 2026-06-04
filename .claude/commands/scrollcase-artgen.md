@@ -24,7 +24,16 @@ Expected image filenames: `YYYY-MM-DD.png` (single prompt) or `YYYY-MM-DD-1.png`
 
 Tell the user which session page you found before proceeding.
 
-## Step 2 — Show the prompts for review
+## Step 2 — Check for unresolved portraits
+
+Before showing prompts, scan the session page for any `<img class="highlight-portrait">` tags whose `src` is the campaign default portrait (`/rpg/.../images/default-portrait.png`). For each one:
+
+1. Find the character's page under `public/characters/`. If it has `dnd_beyond:`, query the DDB proxy (`POST /proxy/character` with `characterId` extracted from the URL, path `ddb.character.decorations.avatarUrl`) and update both the character page `image:` field and the session page `src` attribute.
+2. If the character page exists but has no `dnd_beyond:`, or there is no character page, ask the user: "No portrait found for <Character>. Do you have a D&D Beyond character link or portrait URL?" Apply whatever they provide, or skip if they decline.
+
+Once all portraits are resolved (or explicitly declined), proceed.
+
+## Step 3 — Show the prompts for review
 
 Read the `image_prompt` list from the session page frontmatter. Show them numbered:
 
@@ -46,7 +55,7 @@ If the user edits any prompts, update the session page frontmatter with the corr
 
 Also ask: "Shield-crop the badges? (yes / no — adds the heraldic border)" — skip this question if `--badge` or `--no-badge` was passed in `$ARGUMENTS`.
 
-## Step 3 — Run generation
+## Step 4 — Run generation
 
 ```powershell
 cd C:\Users\decha\dev\scrollcase
@@ -62,7 +71,7 @@ Stream the output. Each image is logged as it generates — show the filenames a
 
 If the script errors (missing GOOGLE_KEY, network failure, etc.), report the message and stop.
 
-## Step 4 — Offer to regenerate specific images
+## Step 5 — Offer to regenerate specific images
 
 After generation completes, say:
 
@@ -88,7 +97,7 @@ uv run python generate_artwork.py `
   --badge-only
 ```
 
-## Step 5 — Hand off
+## Step 6 — Hand off
 
 "Images are in `public/sessions/images/`. When you're happy with them:
 

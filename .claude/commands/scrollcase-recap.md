@@ -63,7 +63,13 @@ Three to four paragraphs, DM voice, past tense. Cover the full session arc — s
 
 ### Player Highlights
 
-One `<div class="highlight">` per player. Portrait image src: use that character's `image:` from `public/characters/<slug>.md` when set. If the character has no page yet, or the page has no `image:`, use the campaign `default_portrait` from `campaign.yaml`, or `/rpg/<campaign>/public/images/default-portrait.png` as final fallback.
+One `<div class="highlight">` per player. Resolve each character's portrait URL using this priority order:
+
+1. `image:` from `public/characters/<slug>.md` — use it directly if set
+2. `dnd_beyond:` from `public/characters/<slug>.md` — extract the character ID from the URL and query the DDB proxy (`POST /proxy/character` with `characterId`) to fetch `ddb.character.decorations.avatarUrl`
+3. No existing character page — check the context file or roster for a DDB character URL for this character; if found, query the proxy as above
+4. **Ask the user** — if portrait is still unresolved after steps 1–3, ask: "No portrait found for <Character>. Do you have a DDB character link or portrait URL?" Do not fall back to the default portrait without asking first.
+5. Default portrait — use only after the user explicitly declines to provide one: campaign `default_portrait` from `campaign.yaml`, or `/rpg/<campaign>/public/images/default-portrait.png`
 
 ```html
 <div class="highlight">
@@ -140,6 +146,8 @@ For each player character in the roster:
 
 **New character** (no `public/characters/<slug>.md` exists): create the file. The slug is the character name slugified (e.g. `therion-starblade`, `pal-go-lucky`).
 
+Before creating new character pages, resolve DDB links for each new character: check the context file and roster for a `dnd_beyond:` URL; if not present, ask the user: "New characters found — do you have D&D Beyond character links for any of them?" (list the new characters). If the user provides links, use them. If they decline, omit the field. Once you have a `dnd_beyond:` URL, query the DDB proxy to get the portrait URL as described in the Player Highlights section.
+
 ```yaml
 ---
 campaign_url: /rpg/<campaign>/public/
@@ -148,7 +156,8 @@ layout: character
 title: <Character Name>
 player: <Player Name>
 class: <Race Class Level>
-image: <portrait URL if known, else omit>
+dnd_beyond: <https://www.dndbeyond.com/characters/<ID> — omit if unknown>
+image: <avatarUrl from DDB proxy if dnd_beyond is known, else omit>
 ---
 
 ## Appearances

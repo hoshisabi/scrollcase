@@ -4,15 +4,18 @@ Generate the player-facing session recap page for a scrollcase campaign. Reads t
 
 ## Paths
 
-| Campaign | Campaign dir |
+| Thing | Path |
 |---|---|
-| pandodnd | `C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd` |
-| icewind-dale | `C:\Users\decha\dev\hoshisabi.github.io\rpg\icewind-dale` |
-| log | `C:\Users\decha\dev\hoshisabi.github.io\rpg\log` |
+| pandodnd campaign dir | `C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd` |
+| icewind-dale campaign dir | `C:\Users\decha\dev\hoshisabi.github.io\rpg\icewind-dale` |
+| log campaign dir | `C:\Users\decha\dev\hoshisabi.github.io\rpg\log` |
+| pandodnd DM dir | `C:\Users\decha\dev\hoshisabi-dm\pandodnd` |
+| icewind-dale DM dir | `C:\Users\decha\dev\hoshisabi-dm\icewind-dale` |
+| log DM dir | `C:\Users\decha\dev\hoshisabi-dm\log` |
 
 ## Step 1 — Find the context file
 
-Look for `dm/sessions/YYYY-MM-DD-context.md` files in the campaign dir. The target is the most recently created one that has **no** corresponding `public/sessions/YYYY-MM-DD.md`. If `$ARGUMENTS` specifies a date, use that instead.
+Look for `<dm-dir>/sessions/YYYY-MM-DD-context.md` files. The target is the most recently created one that has **no** corresponding `public/sessions/YYYY-MM-DD.md` in the campaign dir. If `$ARGUMENTS` specifies a date, use that instead.
 
 If multiple campaigns are present and no campaign is specified, check each one and ask the user which to work on.
 
@@ -20,7 +23,7 @@ If multiple campaigns are present and no campaign is specified, check each one a
 
 Read these in parallel:
 
-- The context file (`dm/sessions/YYYY-MM-DD-context.md`) — date, adventure code/title, roster, transcript path
+- The context file (`<dm-dir>/sessions/YYYY-MM-DD-context.md`) — date, adventure code/title, roster, transcript path
 - The full transcript at the path listed in the context file
 - `campaign.yaml` — `name`, `dm`, `default_portrait`
 - All `public/characters/*.md` files — collect the `image:` field from each character's frontmatter, keyed by character name and slug
@@ -180,5 +183,5 @@ List the files written. Then:
 
 "Done. Next steps:
 1. Generate achievement images — run `/scrollcase-artgen` (or see the commands in the context file)
-2. DM prep — open `dm/sessions/YYYY-MM-DD-dm-prompt.md` and paste into a fresh Claude conversation
+2. DM prep — open `<dm-dir>/sessions/YYYY-MM-DD-dm-prompt.md` and paste into a fresh Claude conversation
 3. When both are done, commit and push — include both `rpg/<campaign>/` and `_data/`"

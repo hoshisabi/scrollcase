@@ -859,7 +859,14 @@ def main():
                 adventure = {"code": code, "title": title, "full_title": f"{code} {title}"}
     else:
         print("\n-- 3. Adventure catalog ------------------- [skipped, no warhorn_slug]")
-        adventure = {"code": "", "title": campaign.get("name", ""), "full_title": campaign.get("name", "")}
+        code = ""
+        if prefix := campaign.get("adventure_code_prefix"):
+            sessions_dir = campaign_dir / "public" / "sessions"
+            n = len(list(sessions_dir.glob("*.md"))) + 1 if sessions_dir.exists() else 1
+            code = f"{prefix}{n:02d}"
+            print(f"  Adventure code: {code} (session {n})")
+        title = campaign.get("name", "")
+        adventure = {"code": code, "title": title, "full_title": title}
     adventure["date"] = notecat["date_str"]
 
     # -- 4. Roster --

@@ -183,5 +183,5 @@ List the files written. Then:
 
 "Done. Next steps:
 1. Generate achievement images — run `/scrollcase-artgen` (or see the commands in the context file)
-2. DM prep — open `<dm-dir>/sessions/YYYY-MM-DD-dm-prompt.md` and paste into a fresh Claude conversation
+2. DM debrief — run `/scrollcase-debrief` (or open `<dm-dir>/sessions/YYYY-MM-DD-dm-prompt.md` and paste into a fresh Claude conversation)
 3. When both are done, commit and push — include both `rpg/<campaign>/` and `_data/`"

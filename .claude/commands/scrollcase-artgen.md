@@ -47,13 +47,23 @@ Found 4 image prompts for 2026-05-20:
 
 Campaign prefix (prepended automatically):
   Bold vintage woodcut circular badge illustration, planar Pandemonium and tavern noir mood...
-
-Any prompts to adjust before generating? (or "ok" to proceed)
 ```
 
-If the user edits any prompts, update the session page frontmatter with the corrected text before running generation. Re-show the updated prompt(s) and confirm.
+Then use AskUserQuestion:
 
-Also ask: "Shield-crop the badges? (yes / no — adds the heraldic border)" — skip this question if `--badge` or `--no-badge` was passed in `$ARGUMENTS`.
+- question: "Ready to generate these prompts?"
+- header: "Prompts"
+- options:
+  - "Generate as shown" (Recommended)
+  - "Edit one or more first" — ask in chat which prompt(s) to change and how, update the session page frontmatter with the corrected text, re-show the updated prompt(s), and ask this question again
+
+If `--badge` or `--no-badge` was passed in `$ARGUMENTS`, use that and skip the next question. Otherwise use AskUserQuestion:
+
+- question: "Shield-crop the badges?"
+- header: "Badge crop"
+- options:
+  - "Yes — add heraldic border"
+  - "No — plain image"
 
 ## Step 4 — Run generation
 
@@ -73,11 +83,16 @@ If the script errors (missing GOOGLE_KEY, network failure, etc.), report the mes
 
 ## Step 5 — Offer to regenerate specific images
 
-After generation completes, say:
+After generation completes, say "Generated <N> image(s) under `public/sessions/images/`." then use AskUserQuestion:
 
-"Generated <N> image(s) under `public/sessions/images/`. Review them and let me know if any need to be redone."
+- question: "How do the generated images look?"
+- header: "Review"
+- options:
+  - "All good" (Recommended) — proceed to Step 6
+  - "Regenerate one or more" — ask in chat which image number(s), then run with `--image <N> --force [--badge]` below
+  - "Edit a prompt and regenerate" — ask in chat which prompt and the new text, update the session page frontmatter, then run with `--image <N> --force [--badge]` below
 
-If the user wants to regenerate a specific image (e.g. "redo image 2"):
+To regenerate a specific image:
 
 ```powershell
 uv run python generate_artwork.py `
@@ -85,8 +100,6 @@ uv run python generate_artwork.py `
   --campaign-dir "<campaign-dir>" `
   --image <N> --force [--badge]
 ```
-
-To adjust a prompt and regenerate: edit the session page frontmatter first, then run with `--image N --force`.
 
 To apply badge cropping to already-generated images without regenerating:
 

@@ -26,8 +26,10 @@ Determine the **source directory**:
 List all transcript files **directly in the source directory** (not in subfolders). Transcripts are `.md` files (NoteCat) or `.txt` files (SessionKeeper). These are unprocessed sessions.
 
 - If `$ARGUMENTS` contains a date, narrow to files whose name contains that date.
-- If multiple transcript files are found, show the list and ask the user which to process.
 - If none are found, say so and stop.
+- If exactly one is found, proceed with it.
+- If 2-4 are found, use AskUserQuestion — question: "Which session should I process?", header: "Session", one option per filename.
+- If more than 4 are found, list them and ask in chat which to process.
 
 Also collect any companion files in the source directory: `.ogg`/`.aac` audio files and `fvtt-Actor-*.json` Foundry exports. These travel with the session.
 
@@ -43,7 +45,11 @@ Read the first 30 lines of the transcript file.
 - NoteCat → almost certainly `pandodnd` (it's the only online campaign using NoteCat)
 - SessionKeeper → `icewind-dale` or `log` — use session content/character names as hints if possible
 
-If `$ARGUMENTS` names a campaign, use it. Otherwise propose your best guess and ask: "This looks like a **pandodnd** session — correct? (or type the campaign name)"
+If `$ARGUMENTS` names a campaign, use it. Otherwise propose your best guess and use AskUserQuestion:
+
+- question: "Which campaign is this session for?"
+- header: "Campaign"
+- options: best guess first, marked "(Recommended)", then the other two campaign names (`pandodnd`, `icewind-dale`, `log`)
 
 ## Step 3 — Read the transcript
 
@@ -119,7 +125,7 @@ For each speaker, combine what you know:
 - Campaign DM (from `campaign.yaml` `dm:` field) — the DM won't have a Foundry export; for NoteCat, their handle is often a real name like "Dan Chapman (he/him)"
 - For **raw/SessionKeeper format**: speakers are character names already; roster work is mainly confirming class/race from character files and flagging the DM
 
-Present the proposed roster as a table and ask the user to confirm or correct it:
+Present the proposed roster as a table:
 
 ```
 Proposed roster for YYYY-MM-DD — confirm or correct:
@@ -130,18 +136,27 @@ Proposed roster for YYYY-MM-DD — confirm or correct:
 | 2 | Ken B. (Neko)          | Ken    | Nico           | Druid/Ranger/Monk  | no  |
 | 3 | MarkD                  | Mark   | Therion        | Fighter            | no  |
 | 4 | unknownhandle          | ?      | ?              | ?                  | no  |
-
-Correct anything that's wrong — e.g. "4 is Michael playing Sparrow, a Rogue" or "3 is the DM".
-Type "ok" when done.
 ```
 
-Apply corrections conversationally. Re-show the table if anything changed. Repeat until "ok".
+Then use AskUserQuestion:
+
+- question: "Does this roster look correct?"
+- header: "Roster"
+- options:
+  - "Yes, looks good" (Recommended)
+  - "I need to make corrections" — ask in chat what to fix (e.g. "4 is Michael playing Sparrow, a Rogue" or "3 is the DM"), apply conversationally, re-show the table, and ask this question again
 
 ## Step 7 — Confirm the scenario name
 
 Derive a readable name from the transcript title or filename (e.g. `Bitopia_Doomometer_Pub_Crawl_2026-05-20.md` → "Bitopia Doomometer Pub Crawl"). This is passed as `--scenario-name` as a Warhorn fallback.
 
-Ask: "Scenario name — press Enter to use `<derived>`, or type the correct one:"
+Use AskUserQuestion:
+
+- question: "Scenario name?"
+- header: "Scenario"
+- options:
+  - "Use '<derived>'" (Recommended)
+  - "I'll type a different name" — if chosen (or if the user picks "Other" with a name directly), use the provided name
 
 Skip this step for campaigns without Warhorn (`icewind-dale`, `log`) — pass an empty or omitted `--scenario-name`.
 
@@ -169,7 +184,13 @@ Rules:
 - DM entry: `is_dm: true`, no `character_name`, `character_class`, or `slug`
 - Omit optional fields rather than leaving them blank
 
-Show the file contents and ask: "Ready to run? (yes / no)"
+Show the file contents, then use AskUserQuestion:
+
+- question: "Ready to run the pipeline?"
+- header: "Run"
+- options:
+  - "Yes, run it" (Recommended)
+  - "No, let me make changes first"
 
 ## Step 9 — Run the pipeline
 
@@ -206,4 +227,4 @@ Only move the files identified in Step 1 — do not sweep the entire root in cas
 
 List the files written by the script (it prints them) and confirm any files were moved. Then:
 
-"Prep complete. When you're ready for the player recap, open a fresh conversation and run `/scrollcase-recap`."
+"Prep complete. Next steps, each in a fresh conversation: `/scrollcase-recap` for the player-facing recap, and `/scrollcase-debrief` for the DM debrief."

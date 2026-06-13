@@ -559,10 +559,10 @@ def write_dm_prep_prompt(
         wiki_paths.extend(sorted(str(p) for p in npcs_dir.glob("*.md")))
     wiki_block = "\n".join(f"  {p}" for p in wiki_paths) or "  (no wiki files found)"
 
-    save_path = out_path.parent / f"{notecat['date_str']}-prep.md"
+    save_path = out_path.parent / f"{notecat['date_str']}-debrief.md"
 
     lines = [
-        f"# DM Prep Prompt — {format_date(notecat['date'])}",
+        f"# DM Debrief Prompt — {format_date(notecat['date'])}",
         "",
         "Paste this into a fresh Claude conversation (separate from the player recap).",
         "Save Claude's output to:",
@@ -920,7 +920,8 @@ def main():
     print(f"\n✓ Prep complete.")
     print(f"\n  Player recap → open in Claude Code:")
     print(f"    {context_path}")
-    print(f"\n  DM prep → paste into a fresh Claude conversation:")
+    print(f"\n  DM debrief → run /scrollcase-debrief in Claude Code,")
+    print(f"    or paste {dm_prompt_path.name} into a fresh conversation:")
     print(f"    {dm_prompt_path}")
 
 

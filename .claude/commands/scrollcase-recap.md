@@ -49,8 +49,7 @@ players:
     character: <character name>
     class: <Race Class Level — use Foundry data if available, else transcript>
 image_prompt:
-  - "<scene-specific prompt for achievement 1 — campaign prefix prepended automatically>"
-  - "<scene-specific prompt for achievement 2>"
+  - "<filled in last — see Achievements section>"
 ---
 ```
 
@@ -58,7 +57,7 @@ Session number N = count of existing session pages + 1.
 
 The `description` field is a teaser written in second person or atmospheric present tense — what the session *felt like*, not what happened step by step. Keep it under 50 words.
 
-Image prompts are scene-specific only. The campaign prefix (from `campaign.yaml image_prompt_prefix`) is prepended automatically at generation time — do not repeat it. Each prompt should describe a single iconic moment or object as a circular badge icon, bold simple shapes, no text. Aim for 3-5 achievements.
+**`image_prompt` is filled in last**, after all achievement blocks are written in the body. Copy the prompts from the achievements in the exact order they appear on the page. Do not write this list before the body is complete — writing it early is what causes image/achievement mismatches.
 
 ### Body narrative
 
@@ -86,6 +85,8 @@ If a character has no existing page yet, omit the `<a>` link for now and use jus
 ### Achievements
 
 One `<div class="achievement">` per achievement (3–5 total). Each achievement is a specific moment, quote, or decision from the session — not a general trait. The badge image filename follows the session date and list order.
+
+**Write all achievement blocks here first.** Once they are finalised, go back and fill the `image_prompt` frontmatter list with one entry per achievement, in the same top-to-bottom order as the blocks below. Achievement 1 → image_prompt[0], achievement 2 → image_prompt[1], etc.
 
 ```html
 <div class="achievement">

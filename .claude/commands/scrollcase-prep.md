@@ -175,13 +175,15 @@ Write `<dm-dir>/sessions/YYYY-MM-DD-roster-input.yaml`:
   character_class: Druid/Ranger/Monk
   is_dm: false
   slug: kenb        # omit for new players if unknown; the script will derive it
+  ddb_id: 113570473 # numeric ID from the DnD Beyond character URL
 ```
 
 Rules:
 - `discord_name` must exactly match the speaker string from the transcript
 - `slug` for known registry players: use the existing slug
 - `slug` for new players: derive from first word of `player_name` (lowercased); ask if a collision is likely
-- DM entry: `is_dm: true`, no `character_name`, `character_class`, or `slug`
+- DM entry: `is_dm: true`, no `character_name`, `character_class`, `slug`, or `ddb_id`
+- `ddb_id`: the numeric ID from the D&D Beyond character URL (`dndbeyond.com/characters/<id>`). Populate this whenever a DDB link is provided by the user or fetched via the DDB proxy. Omit if unknown.
 - Omit optional fields rather than leaving them blank
 
 Show the file contents, then use AskUserQuestion:
@@ -211,17 +213,27 @@ Show the output. If the script errors, report the message and stop — do not re
 
 ## Step 10 — Move files to campaign subfolder
 
-**Only applies when the source is the standard inbox** (`D:\GoogleDrive\chapmand\My Drive\scrollcase\`). If the source was an override path from `$ARGUMENTS`, skip this step.
+**Only applies when the source directory is the scrollcase inbox root** — i.e., the files were found directly in the scrollcase folder (not already in a campaign subfolder). The inbox may be mounted as `D:\GoogleDrive\chapmand\My Drive\scrollcase\` or `H:\My Drive\scrollcase\` depending on the machine; what matters is that the source directory's parent is not already a campaign subfolder (`pandodnd`, `icewind-dale`, `log`).
 
 On success, move all files that were collected in Step 1 to the campaign subfolder:
 
 ```powershell
-$dest = "D:\GoogleDrive\chapmand\My Drive\scrollcase\<campaign>\"
-Move-Item "D:\GoogleDrive\chapmand\My Drive\scrollcase\<transcript>" $dest
+$dest = "<inbox-root>\<campaign>\"
+Move-Item "<inbox-root>\<transcript>" $dest
 # move any audio and fvtt-Actor-*.json files collected in Step 1
 ```
 
 Only move the files identified in Step 1 — do not sweep the entire root in case another session was dropped in while this one was being processed.
+
+**After moving, update the context file** to point to the new transcript location:
+
+```powershell
+(Get-Content "<dm-dir>\sessions\YYYY-MM-DD-context.md") `
+  -replace [regex]::Escape("<old-transcript-path>"), "<new-transcript-path>" |
+  Set-Content "<dm-dir>\sessions\YYYY-MM-DD-context.md" -Encoding UTF8
+```
+
+Confirm the replacement printed the updated path.
 
 ## Step 11 — Hand off
 

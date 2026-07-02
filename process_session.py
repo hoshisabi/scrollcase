@@ -322,10 +322,12 @@ def _roster_entry_from_file(entry: dict, registry: list, *, noprompt: bool) -> d
             "character_class": None,
             "is_dm": True,
             "slug": None,
+            "ddb_id": None,
         }
 
     character_name = entry.get("character_name") or None
     character_class = entry.get("character_class") or None
+    ddb_id = entry.get("ddb_id") or None
     slug = entry.get("slug")
     if slug is not None:
         resolved_slug = resolve_slug(
@@ -351,6 +353,7 @@ def _roster_entry_from_file(entry: dict, registry: list, *, noprompt: bool) -> d
         "character_class": character_class,
         "is_dm": False,
         "slug": resolved_slug,
+        "ddb_id": ddb_id,
     }
 
 
@@ -609,16 +612,31 @@ def write_context_summary(
     dm = next((r for r in roster if r.get("is_dm")), None)
     players = [r for r in roster if not r.get("is_dm")]
 
-    players_md = "\n".join(
-        f"- **{r['player_name']}** as **{r.get('character_name') or '(unnamed)'}**"
-        + (f" -- {r['character_class']}" if r.get("character_class") else "")
-        for r in players
-    )
+    def _player_roster_line(r: dict) -> str:
+        line = f"- **{r['player_name']}** as **{r.get('character_name') or '(unnamed)'}**"
+        if r.get("character_class"):
+            line += f" -- {r['character_class']}"
+        if r.get("ddb_id"):
+            line += f" ([DDB](https://www.dndbeyond.com/characters/{r['ddb_id']}))"
+        return line
+
+    players_md = "\n".join(_player_roster_line(r) for r in players)
 
     warhorn_players = ""
     if warhorn_session and warhorn_session.get("playerSignups"):
         names = [s["user"]["name"] for s in warhorn_session["playerSignups"]]
         warhorn_players = f"\n**Warhorn signups**: {', '.join(names)}"
+
+    # Find most recent existing session page to use as a formatting reference
+    sessions_pub_dir = campaign_dir / "public" / "sessions"
+    reference_session = None
+    if sessions_pub_dir.is_dir():
+        candidates = sorted(
+            [p for p in sessions_pub_dir.glob("????-??-??.md") if p.stem != notecat["date_str"]],
+            reverse=True,
+        )
+        if candidates:
+            reference_session = candidates[0]
 
     lines = [
         f"# Session Context -- {notecat['date_str']}",
@@ -647,6 +665,14 @@ def write_context_summary(
         "## Next step",
         "",
         "In Claude Code, share this file and the transcript path, then ask Claude to:",
+        *(
+            [
+                f"0. Use `{reference_session}` as a formatting reference for the session page.",
+                "",
+            ]
+            if reference_session
+            else []
+        ),
         "1. Read the intro segment and confirm/correct the roster",
         "2. Generate the session recap, player highlights, and achievements.",
         "   For **Player Highlights**, use `<div class=\"highlight\">`, `<img class=\"highlight-portrait\" src=\"...\">`, "

@@ -78,6 +78,33 @@ Show the draft. Use AskUserQuestion:
 
 Write the approved draft to `<dm-dir>/sessions/YYYY-MM-DD-prep.md`.
 
-## Step 7 — Hand off
+## Step 7 — Commit and push
+
+Ask whether to commit and push:
+
+- question: "Commit and push the prep doc?"
+- header: "Git"
+- options:
+  - "Yes, commit and push" (Recommended)
+  - "No, I'll handle it"
+
+If yes, stage only the prep file and commit to the `<dm-dir>` repo:
+
+```powershell
+cd <dm-dir-repo-root>   # e.g. C:\Users\decha\dev\hoshisabi-dm
+git add icewind-dale/sessions/YYYY-MM-DD-prep.md   # adjust path for campaign
+git commit -m @'
+feat(<campaign>): Session N prep — <one-line summary of the session's core>
+
+<one or two sentences on what the session is built around>
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+'@
+git push
+```
+
+Stage only the new prep file — do not stage unrelated changes already present in the working tree.
+
+## Step 8 — Hand off
 
 "Prep written to `<dm-dir>/sessions/YYYY-MM-DD-prep.md`. After the session: `/scrollcase-prep` to process the transcript, then `/scrollcase-debrief` for the write-up — its ideas feed back into the next round of this."

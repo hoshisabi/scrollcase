@@ -4,11 +4,11 @@ Add a new wiki page to a scrollcase campaign — NPC, item, location, lore, or c
 
 ## Paths
 
-| Campaign | Campaign dir |
-|---|---|
-| pandodnd | `C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd` |
-| icewind-dale | `C:\Users\decha\dev\hoshisabi.github.io\rpg\icewind-dale` |
-| log | `C:\Users\decha\dev\hoshisabi.github.io\rpg\log` |
+| Campaign | Campaign dir | DM dir |
+|---|---|---|
+| pandodnd | `C:\Users\decha\dev\hoshisabi.github.io\rpg\pandodnd` | `C:\Users\decha\dev\hoshisabi-dm\pandodnd` |
+| icewind-dale | `C:\Users\decha\dev\hoshisabi.github.io\rpg\icewind-dale` | `C:\Users\decha\dev\hoshisabi-dm\icewind-dale` |
+| log | `C:\Users\decha\dev\hoshisabi.github.io\rpg\log` | `C:\Users\decha\dev\hoshisabi-dm\log` |
 
 | Thing | Path |
 |---|---|
@@ -48,13 +48,17 @@ If not given in `$ARGUMENTS`, ask using AskUserQuestion (combine into one call i
 - **Campaign**: pandodnd / icewind-dale / log
 - **Page type**: NPC / Item / Location / Lore / Character
 
-## Step 2 — Gather details
+## Step 2 — Research from DM notes
 
-Ask the user in chat: *"Tell me about [the NPC / item / location / etc.]. Give me as much or as little as you have — name, role, what happened with them, anything that should be on the page."*
+Before asking the user for details, search the DM directory for existing information about the subject. Do these in parallel with reading 2–3 existing public pages of the same type (to calibrate tone) and `campaign.yaml`:
 
-Read 2–3 existing pages of the same type in the campaign's public directory to calibrate tone and length before drafting. Do this in parallel with reading `campaign.yaml`.
+1. **Grep `<dm-dir>/threads.md`** for the subject's name — this often has role, status, and plot context.
+2. **Read the most recent session file** in `<dm-dir>/sessions/` — check for the subject's first or most prominent appearance.
+3. **Grep all session files** in `<dm-dir>/sessions/` for the subject's name to catch earlier appearances.
 
-Ask follow-up questions only if something critical is missing (e.g. NPC status, item location, lore category). Don't ask for things you can infer or leave blank.
+Draft the page using what you found. Ask the user only for anything critical that's still missing — e.g. status confirmation, or context that wasn't in the DM notes. Don't ask for things you can infer. Don't include DM-only information (marked `[DM ONLY]`) on the public page.
+
+If the user provided information in their initial message, incorporate it alongside what you found.
 
 ## Step 3 — Draft the page
 

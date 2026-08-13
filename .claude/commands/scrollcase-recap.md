@@ -1,6 +1,6 @@
 Generate the player-facing session recap page for a scrollcase campaign. Reads the context file and transcript produced by `/scrollcase-prep`, drafts the session page, shows it to the user for review and correction, then writes it.
 
-`$ARGUMENTS` may contain a campaign name (`pandodnd`, `icewind-dale`, `log`) and/or a date (`YYYY-MM-DD`). If omitted, find the most recent context file with no corresponding public session page.
+`$ARGUMENTS` may contain a campaign name (`pandodnd`, `icewind-dale`, `log`) and/or a date (`YYYY-MM-DD`). If either is omitted, Step 1 asks for it — with a fallback to auto-detecting the most recent context file that has no published page.
 
 ## Paths
 
@@ -15,9 +15,11 @@ Generate the player-facing session recap page for a scrollcase campaign. Reads t
 
 ## Step 1 — Find the context file
 
-Look for `<dm-dir>/sessions/YYYY-MM-DD-context.md` files. The target is the most recently created one that has **no** corresponding `public/sessions/YYYY-MM-DD.md` in the campaign dir. If `$ARGUMENTS` specifies a date, use that instead.
+Resolve the **campaign** and **date**, asking for whatever `$ARGUMENTS` didn't supply:
+- **Campaign** — if named in `$ARGUMENTS`, use it; otherwise AskUserQuestion, header **Campaign**, options: `pandodnd`, `icewind-dale`, `log` (AskUserQuestion adds *Other* automatically).
+- **Date** — if given in `$ARGUMENTS`, use it; otherwise AskUserQuestion, header **Date**, options: **Today** (the current date), **Yesterday** (current date − 1 day), **Enter a date** (`YYYY-MM-DD`). Resolve Today/Yesterday to a concrete `YYYY-MM-DD` using the current system date.
 
-If multiple campaigns are present and no campaign is specified, check each one and ask the user which to work on.
+Then load `<dm-dir>/sessions/<date>-context.md` for the chosen campaign. If no context file exists for that campaign/date, say so and fall back to the most recent context file that has **no** corresponding `public/sessions/YYYY-MM-DD.md` (offer it before proceeding).
 
 ## Step 2 — Read all the inputs
 

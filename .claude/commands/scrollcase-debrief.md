@@ -2,7 +2,7 @@ Generate the DM-facing session debrief for a scrollcase campaign. Reads the cont
 
 These are ideas for *later* prep, not the next session's own battle plan — `<dm-dir>/sessions/YYYY-MM-DD-prep.md` (the forward-looking plan for whichever date the next session lands on) is a separate document and out of scope here.
 
-`$ARGUMENTS` may contain a campaign name (`pandodnd`, `icewind-dale`, `log`) and/or a date (`YYYY-MM-DD`). If omitted, find the most recent context file with no corresponding debrief.
+`$ARGUMENTS` may contain a campaign name (`pandodnd`, `icewind-dale`, `log`) and/or a date (`YYYY-MM-DD`). If either is omitted, Step 1 asks for it — with a fallback to auto-detecting the most recent context file that has no debrief.
 
 ## Paths
 
@@ -17,10 +17,13 @@ These are ideas for *later* prep, not the next session's own battle plan — `<d
 
 ## Step 1 — Find the context file
 
-Look for `<dm-dir>/sessions/YYYY-MM-DD-context.md` files across the relevant campaign(s). A session is a candidate if it has **no** corresponding `<dm-dir>/sessions/YYYY-MM-DD-debrief.md`.
+A session's context file is `<dm-dir>/sessions/YYYY-MM-DD-context.md`; a session is a candidate for debrief if it has **no** corresponding `<dm-dir>/sessions/YYYY-MM-DD-debrief.md`.
 
-- If `$ARGUMENTS` specifies a date, use that session directly (whichever campaign has a matching context file).
-- If `$ARGUMENTS` specifies a campaign, narrow to that campaign's DM dir.
+Resolve the **campaign** and **date**, asking for whatever `$ARGUMENTS` didn't supply:
+- **Campaign** — if named in `$ARGUMENTS`, narrow to that campaign's DM dir; otherwise AskUserQuestion, header **Campaign**, options: `pandodnd`, `icewind-dale`, `log` (AskUserQuestion adds *Other* automatically).
+- **Date** — if given in `$ARGUMENTS`, use it; otherwise AskUserQuestion, header **Date**, options: **Today** (the current date), **Yesterday** (current date − 1 day), **Enter a date** (`YYYY-MM-DD`). Resolve Today/Yesterday to a concrete `YYYY-MM-DD` using the current system date.
+
+Then use `<dm-dir>/sessions/<date>-context.md` for the chosen campaign. If no matching context file exists, say so and fall back to the candidate set (context files with no debrief):
 - If exactly one candidate remains, use it.
 - If 2-4 candidates remain, use AskUserQuestion — question: "Which session should I debrief?", header: "Session", one option per candidate (e.g. "icewind-dale — 2026-06-12").
 - If more than 4, list them and ask in chat which to process.

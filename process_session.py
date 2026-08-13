@@ -664,7 +664,9 @@ def write_context_summary(
         "",
         "## Next step",
         "",
-        "In Claude Code, share this file and the transcript path, then ask Claude to:",
+        f"Run `/scrollcase-recap {campaign} {notecat['date_str']}` in a fresh Claude Code "
+        "conversation — it reads this context file and the transcript itself, so there is "
+        "nothing to copy-paste. Manual fallback (share this file and the transcript path, then ask Claude to):",
         *(
             [
                 f"0. Use `{reference_session}` as a formatting reference for the session page.",
@@ -943,12 +945,14 @@ def main():
 
     context_path = dm_dir / "sessions" / (notecat["date_str"] + "-context.md")
     dm_prompt_path = dm_dir / "sessions" / (notecat["date_str"] + "-dm-prompt.md")
+    date_str = notecat["date_str"]
     print(f"\n✓ Prep complete.")
-    print(f"\n  Player recap → open in Claude Code:")
-    print(f"    {context_path}")
-    print(f"\n  DM debrief → run /scrollcase-debrief in Claude Code,")
-    print(f"    or paste {dm_prompt_path.name} into a fresh conversation:")
-    print(f"    {dm_prompt_path}")
+    print(f"\n  Each runs in a fresh Claude Code conversation and reads the context")
+    print(f"  file itself — nothing to copy-paste:")
+    print(f"\n    Player recap → /scrollcase-recap {campaign} {date_str}")
+    print(f"    DM debrief   → /scrollcase-debrief {campaign} {date_str}")
+    print(f"\n  Files:  {context_path}")
+    print(f"          {dm_prompt_path}")
 
 
 if __name__ == "__main__":

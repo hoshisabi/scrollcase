@@ -90,7 +90,7 @@ Do the download **before** writing the page, so every `src` you write is already
 </div>
 ```
 
-If a character has no existing page yet, omit the `<a>` link for now and use just `<strong><Character></strong>` — you'll create the page in Step 5.
+**Always link the highlight name**, even for a character's first appearance: `<strong><a href="../characters/<slug>"><Character></a></strong>`, where `<slug>` is the character name slugified (e.g. `keno-ichikawa`, `zeli-vantel`). Step 5 creates a page for **every** character on the roster — new or returning — so the link target is guaranteed to exist by the time the page is published. Never leave a first-appearance character unlinked; that only happens if you link based on whether the page exists *now* instead of the slug it *will* have.
 
 ### Achievements
 

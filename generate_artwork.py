@@ -23,6 +23,7 @@ Shield badge post-process (achievement-style crop):
     --badge / --badge-only  (also --badge-size, --badge-width, --badge-color)
 """
 import os
+import io
 import re
 import random
 import time
@@ -269,6 +270,17 @@ def output_paths(md_path: pathlib.Path, count: int) -> list[pathlib.Path]:
     return [images_dir / f"{stem}-{i + 1}.png" for i in range(count)]
 
 
+def _extract_inline_image(response) -> bytes | None:
+    """Pull raw image bytes from the first inline_data part of a generate_content response."""
+    for cand in getattr(response, "candidates", None) or []:
+        content = getattr(cand, "content", None)
+        for part in getattr(content, "parts", None) or []:
+            inline = getattr(part, "inline_data", None)
+            if inline is not None and getattr(inline, "data", None):
+                return inline.data
+    return None
+
+
 def generate_one(
     client,
     prompt: str,
@@ -286,12 +298,28 @@ def generate_one(
     print(f"  generating: {out_path.name}")
     print(f"  prompt: {prompt[:120]}{'...' if len(prompt) > 120 else ''}")
 
-    response = client.models.generate_images(
-        model=model,
-        prompt=prompt,
-        config=types.GenerateImagesConfig(number_of_images=1),
-    )
-    response.generated_images[0].image.save(out_path)
+    if model.startswith("imagen"):
+        response = client.models.generate_images(
+            model=model,
+            prompt=prompt,
+            config=types.GenerateImagesConfig(number_of_images=1),
+        )
+        response.generated_images[0].image.save(out_path)
+    else:
+        # Gemini-native image models generate via generate_content, returning
+        # the image as inline_data bytes on a response part (Imagen predict is
+        # not available on all API keys).
+        response = client.models.generate_content(
+            model=model,
+            contents=prompt,
+            config=types.GenerateContentConfig(response_modalities=["TEXT", "IMAGE"]),
+        )
+        image_bytes = _extract_inline_image(response)
+        if image_bytes is None:
+            raise RuntimeError(
+                f"No image returned by {model} (possible safety block or empty output)"
+            )
+        Image.open(io.BytesIO(image_bytes)).save(out_path)
     print(f"  saved: {out_path}")
 
     if badge_opts is not None:
@@ -372,7 +400,7 @@ def generate_session_images(
     *,
     campaign_dir: pathlib.Path,
     session_date_str: str,
-    model: str = "imagen-4.0-fast-generate-001",
+    model: str = "gemini-2.5-flash-image",
     delay: float = 6.0,
     force: bool = False,
     badge: bool = False,
@@ -429,8 +457,8 @@ def main():
                         help="One-off mode: output filename without extension (required with --prompt)")
     parser.add_argument("--type", choices=("characters", "npcs", "locations", "items", "other"), default="other", dest="img_type",
                         help="One-off mode: output directory type (default: other)")
-    parser.add_argument("--model", default="imagen-4.0-fast-generate-001",
-                        help="Imagen model to use")
+    parser.add_argument("--model", default="gemini-2.5-flash-image",
+                        help="Image model: a Gemini image model (generate_content) or an imagen-* predict model")
     parser.add_argument("--delay", type=float, default=6.0,
                         help="Seconds between API requests (default: 6)")
     parser.add_argument("--force", action="store_true",

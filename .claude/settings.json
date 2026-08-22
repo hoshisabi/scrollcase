@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Read"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\decha\\dev\\hoshisabi-dm",
+      "C:\\Users\\decha\\dev\\hoshisabi.github.io",
+      "H:\\My Drive\\scrollcase"
+    ]
+  }
+}

@@ -1,3 +1,11 @@
+---
+name: scrollcase-wiki-add
+description: >-
+  Add a new wiki page to a scrollcase campaign — NPC, item, location, lore, or character.
+  Gathers details, drafts the page, reviews the image prompt, generates the image, then commits
+  and pushes.
+---
+
 Add a new wiki page to a scrollcase campaign — NPC, item, location, lore, or character. Gathers details, drafts the page, reviews the image prompt, generates the image, then commits and pushes.
 
 `$ARGUMENTS` may contain a campaign name (`pandodnd`, `icewind-dale`, `log`) and/or a page type (`npc`, `item`, `location`, `lore`, `character`). Omit either or both to be asked.

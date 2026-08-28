@@ -1,3 +1,11 @@
+---
+name: scrollcase-debrief
+description: >-
+  Generate the DM-facing session debrief for a scrollcase campaign. Reads the context file,
+  transcript, and campaign wiki, drafts a DM assistant report covering what happened and what it
+  sets up, shows it for review, then writes it to `<dm-dir>/sessions/YYYY-MM-DD-debrief.md`.
+---
+
 Generate the DM-facing session debrief for a scrollcase campaign. Reads the context file, transcript, and campaign wiki, drafts a DM assistant report covering what happened and what it sets up, shows it for review, then writes it to `<dm-dir>/sessions/YYYY-MM-DD-debrief.md`.
 
 These are ideas for *later* prep, not the next session's own battle plan — `<dm-dir>/sessions/YYYY-MM-DD-prep.md` (the forward-looking plan for whichever date the next session lands on) is a separate document and out of scope here.

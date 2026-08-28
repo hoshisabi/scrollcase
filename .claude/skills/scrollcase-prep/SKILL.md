@@ -1,3 +1,11 @@
+---
+name: scrollcase-prep
+description: >-
+  Process a TTRPG session through scrollcase: find unprocessed files in the inbox, identify the
+  campaign, build the roster interactively, run the prep pipeline non-interactively, then move
+  files into the campaign subfolder as a completion signal.
+---
+
 Process a TTRPG session through scrollcase: find unprocessed files in the inbox, identify the campaign, build the roster interactively, run the prep pipeline non-interactively, then move files into the campaign subfolder as a completion signal.
 
 `$ARGUMENTS` may contain a campaign name (`pandodnd`, `icewind-dale`, `log`), a date (`YYYY-MM-DD`), a filesystem path to a source directory, or any combination — use them to narrow the search. If omitted, auto-detect.

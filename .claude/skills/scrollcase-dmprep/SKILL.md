@@ -1,3 +1,12 @@
+---
+name: scrollcase-dmprep
+description: >-
+  Help the DM plan the *next* session for a scrollcase campaign. This is an open-ended planning
+  conversation, not a mechanical extraction: read the latest debrief and campaign wiki, surface
+  open threads and unused ideas, talk through what to run next, then write `<dm-
+  dir>/sessions/YYYY-MM-DD-prep.md`.
+---
+
 Help the DM plan the *next* session for a scrollcase campaign. This is an open-ended planning conversation, not a mechanical extraction: read the latest debrief and campaign wiki, surface open threads and unused ideas, talk through what to run next, then write `<dm-dir>/sessions/YYYY-MM-DD-prep.md`.
 
 `$ARGUMENTS` may contain a campaign name (`pandodnd`, `icewind-dale`, `log`) and/or a date (`YYYY-MM-DD`). If the date is omitted, default to the upcoming occurrence of this campaign's usual session weekday — see Step 1.

@@ -1,3 +1,11 @@
+---
+name: scrollcase-artgen
+description: >-
+  Generate achievement badge images for a session page. Reads the image_prompt list from the
+  session page frontmatter, shows the prompts for review and adjustment before spending API
+  calls, then generates and optionally shield-crops the images.
+---
+
 Generate achievement badge images for a session page. Reads the image_prompt list from the session page frontmatter, shows the prompts for review and adjustment before spending API calls, then generates and optionally shield-crops the images.
 
 `$ARGUMENTS` may contain a campaign name (`pandodnd`, `icewind-dale`, `log`), a date (`YYYY-MM-DD`), and/or `--badge` / `--no-badge` to pre-answer the shield-crop question. If omitted, find the most recent session page that has image prompts but no generated images yet.

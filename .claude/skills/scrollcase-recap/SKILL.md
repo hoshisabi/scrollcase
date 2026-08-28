@@ -1,3 +1,11 @@
+---
+name: scrollcase-recap
+description: >-
+  Generate the player-facing session recap page for a scrollcase campaign. Reads the context
+  file and transcript produced by `/scrollcase-prep`, drafts the session page, shows it to the
+  user for review and correction, then writes it.
+---
+
 Generate the player-facing session recap page for a scrollcase campaign. Reads the context file and transcript produced by `/scrollcase-prep`, drafts the session page, shows it to the user for review and correction, then writes it.
 
 `$ARGUMENTS` may contain a campaign name (`pandodnd`, `icewind-dale`, `log`) and/or a date (`YYYY-MM-DD`). If either is omitted, Step 1 asks for it — with a fallback to auto-detecting the most recent context file that has no published page.

@@ -30,7 +30,8 @@ Add a new wiki page to a scrollcase campaign — NPC, item, location, lore, or c
 | Item | `location` | `public/items/` | — |
 | Location | `location` | `public/locations/` | `also_known_as` (list, optional) |
 | Lore | `lore` | `public/lore/` | `category` |
-| Character | `character` | `public/characters/` | `player`, `class`, `dnd_beyond` (optional) |
+| Character | `character` | `public/characters/` | `player`, `player_slug`, `class`, `dnd_beyond` (optional) |
+| Player | `player` | `public/players/` | `player_slug` (same as filename; lists characters via layout) |
 
 NPC `status` conventions: `Active`, `Active — first appeared Session N`, `Departed`, `Missing — presumed dead, Session N`.
 
@@ -54,7 +55,7 @@ For NPC race: never use D&D race names (tabaxi, gnome when it would be ambiguous
 If not given in `$ARGUMENTS`, ask using AskUserQuestion (combine into one call if both are unknown):
 
 - **Campaign**: pandodnd / icewind-dale / log
-- **Page type**: NPC / Item / Location / Lore / Character
+- **Page type**: NPC / Item / Location / Lore / Character / Player
 
 ## Step 2 — Research from DM notes
 
@@ -93,14 +94,18 @@ also_known_as:
 category: <category>
 # Character only:
 player: <Player Name>
+player_slug: <registry slug from dm/player-registry.yaml — required; ask if ambiguous>
 class: <Race Class Level>
 dnd_beyond: <URL — omit if unknown>
+# Player only:
+player_slug: <same as filename slug>
 # All types:
 image: /rpg/<campaign-slug>/public/<type-dir>/images/<slug>.png
 image_prompt: "<prompt — see Step 4>"
 ---
 ```
 
+When creating a **character** page, resolve `player_slug` from `<dm-dir>/player-registry.yaml` (exact `display_name` or `slug` match). If nothing matches cleanly, or an existing `player_slug` on the page disagrees with the registry, ask the user — do not guess. Also ensure `public/players/<player_slug>.md` exists (create a stub with `layout: player` if missing); the player layout auto-lists characters by `player_slug`.
 ### Body
 
 Write in the established voice of the campaign's existing pages — not summary bullet points, not a stat block. Prose paragraphs. For NPCs: who they are, how they relate to the party, what the reader should know. For items: where it was found, what it does, any story weight. For locations: what it is, what it looks like, what happened here. For lore: what this tradition/concept/fact means in the world.

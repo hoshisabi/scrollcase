@@ -162,7 +162,32 @@ If no matching entry is found, print a warning and skip the update rather than m
 
 ## Step 7 — Create or update character pages
 
-Character pages are **per character**, not per player. A player who has appeared before with a different character still gets a fresh page for the new one. The `player:` frontmatter field is the only link between a player and their characters — there are no player pages (may be added later).
+Character pages are **per character**, not per player. A player who has appeared before with a different character still gets a fresh page for the new one. Link characters to players with both `player:` (display name) and `player_slug:` (stable id from `dm/player-registry.yaml`). Player pages under `public/players/<player_slug>.md` are thin stubs — the site layout lists every character with a matching `player_slug` automatically.
+
+### Resolve `player_slug` (do this before writing any character page)
+
+Read `<dm-dir>/player-registry.yaml`. For each roster player, resolve a slug:
+
+1. **Exact match** on a registry `display_name` (case-insensitive) → use that entry's `slug`.
+2. **Exact match** on a registry `slug` → use it.
+3. **Existing character page** for this character already has `player_slug:` → reuse it, but if the registry resolves to a *different* slug, **ask the user** before changing anything (drift).
+4. **Ambiguous or no match** — e.g. nickname vs registry name, two plausible entries, or a new player — **ask the user**. Offer the closest registry candidates when you have them. Do not guess when two players could share a similar name.
+
+Use the roster's player name for `player:` (what appears on the page). Do not silently rewrite `player:` to a different registry `display_name` unless the user confirms a normalization (e.g. `OP` → `OnlyPetrichor`).
+
+After resolving, ensure `public/players/<player_slug>.md` exists. If missing, create it:
+
+```yaml
+---
+campaign_url: /rpg/<campaign>/public/
+campaign_name: <campaign name>
+layout: player
+title: <Player Name — same as player: on character pages>
+player_slug: <registry slug>
+---
+```
+
+No body required. Do not hand-maintain a character list on the player page — Liquid gathers characters by `player_slug`. If the player page already exists, leave it alone unless `title:` is wrong and the user asked to fix it.
 
 For each player character in the roster:
 
@@ -177,6 +202,7 @@ campaign_name: <campaign name>
 layout: character
 title: <Character Name>
 player: <Player Name>
+player_slug: <registry slug — required>
 class: <Race Class Level>
 dnd_beyond: <https://www.dndbeyond.com/characters/<ID> — omit if unknown>
 image: </rpg/<campaign>/public/images/portraits/<slug>.<ext> — the LOCAL copy downloaded per the portrait rule, never a DDB/Forge URL; omit only if no portrait exists>
@@ -193,6 +219,8 @@ _Note: drop-in roster; this page grows when the character appears in recaps._
 ```
 - **YYYY-MM-DD** — [Session N (Month D, YYYY)](../sessions/YYYY-MM-DD) (*<session_title>*)
 ```
+
+If a returning character page is missing `player_slug:`, add it (same resolution rules as above). Do not change an existing `player_slug:` without asking when it disagrees with the registry.
 
 Do not touch any other content in an existing character page. Do not update pages for characters who did **not** appear in this session.
 

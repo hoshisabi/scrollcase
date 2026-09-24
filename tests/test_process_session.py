@@ -5,6 +5,7 @@ import unittest
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from process_session import (  # noqa: E402
+    campaign_slug,
     resolve_slug,
 )
 
@@ -45,6 +46,12 @@ class ResolveSlugTests(unittest.TestCase):
         slug = resolve_slug(reg, "Mike", "BigMike2", derive_if_missing=True)
         self.assertEqual(slug, "bigmikemc")
         self.assertIn("BigMike2", reg[1]["discord_aliases"])
+
+
+class CampaignSlugTests(unittest.TestCase):
+    def test_slug_from_config_else_dir_name(self):
+        self.assertEqual(campaign_slug(pathlib.Path("x/pandodnd"), {"slug": "pando", "name": "PandoDnD"}), "pando")
+        self.assertEqual(campaign_slug(pathlib.Path("x/pandodnd"), {}), "pandodnd")
 
 
 if __name__ == "__main__":

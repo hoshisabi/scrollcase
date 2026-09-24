@@ -676,7 +676,7 @@ def write_context_summary(
         "",
         "## Next step",
         "",
-        f"Run `/scrollcase-recap {campaign} {notecat['date_str']}` in a fresh Claude Code "
+        f"Run `/scrollcase-recap {campaign_slug(campaign_dir, campaign)} {notecat['date_str']}` in a fresh Claude Code "
         "conversation — it reads this context file and the transcript itself, so there is "
         "nothing to copy-paste. Manual fallback (share this file and the transcript path, then ask Claude to):",
         *(
@@ -741,6 +741,10 @@ def load_campaign(campaign_dir: pathlib.Path) -> dict:
     if not config_path.exists():
         return {}
     return yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+
+
+def campaign_slug(campaign_dir: pathlib.Path, campaign: dict) -> str:
+    return campaign.get("slug") or campaign_dir.name
 
 
 def main():
@@ -961,8 +965,9 @@ def main():
     print(f"\n✓ Prep complete.")
     print(f"\n  Each runs in a fresh Claude Code conversation and reads the context")
     print(f"  file itself — nothing to copy-paste:")
-    print(f"\n    Player recap → /scrollcase-recap {campaign} {date_str}")
-    print(f"    DM debrief   → /scrollcase-debrief {campaign} {date_str}")
+    slug = campaign_slug(campaign_dir, campaign)
+    print(f"\n    Player recap → /scrollcase-recap {slug} {date_str}")
+    print(f"    DM debrief   → /scrollcase-debrief {slug} {date_str}")
     print(f"\n  Files:  {context_path}")
     print(f"          {dm_prompt_path}")
 

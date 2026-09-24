@@ -276,13 +276,25 @@ def resolve_slug(
     derive_if_missing: bool = False,
     noprompt: bool = False,
 ) -> str:
-    name_lower = player_name.lower()
-    for entry in registry:
-        if entry["display_name"].lower() == name_lower:
-            aliases = entry.setdefault("discord_aliases", [])
-            if discord_name and discord_name not in aliases:
-                aliases.append(discord_name)
-            return entry["slug"]
+    def _claim(entry: dict) -> str:
+        aliases = entry.setdefault("discord_aliases", [])
+        if discord_name and discord_name not in aliases:
+            aliases.append(discord_name)
+        return entry["slug"]
+
+    # An explicit slug is authoritative; display names collide (Mike vs Michael).
+    if slug_override is not None:
+        for entry in registry:
+            if entry["slug"] == slug_override:
+                return _claim(entry)
+    else:
+        for entry in registry:
+            if discord_name and discord_name in entry.get("discord_aliases", []):
+                return entry["slug"]
+        name_lower = player_name.lower()
+        for entry in registry:
+            if entry["display_name"].lower() == name_lower:
+                return _claim(entry)
 
     default_slug = slugify(player_name.split()[0])
     if slug_override is not None:

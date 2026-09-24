@@ -232,23 +232,55 @@ def query_warhorn(session_date, token: str, slug_override: str = None) -> Option
 
 # -- Stage 3: Adventure catalog lookup ----------------------------------------
 
+def leading_code(scenario_name: str) -> Optional[str]:
+    """Adventure code at the start of a scenario name, e.g. 'FR-DC-LOOSE-001 Spells…' → 'FR-DC-LOOSE-001'."""
+    m = re.match(r"([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+)(?=\s|$)", scenario_name.strip().upper())
+    if m and re.search(r"\d", m.group(1)):
+        return m.group(1)
+    return None
+
+
 def lookup_catalog(catalog_dir: pathlib.Path, scenario_name: str) -> Optional[dict]:
     if not catalog_dir or not catalog_dir.exists():
         return None
 
-    needle = scenario_name.upper()
+    adventures = []
     for f in sorted(catalog_dir.glob("*.json")):
         try:
             data = json.loads(f.read_text(encoding="utf-8"))
-            if not data.get("is_adventure"):
-                continue
-            for field in ("code", "title", "full_title"):
-                val = data.get(field, "")
-                if val and (val.upper() in needle or needle in val.upper()):
-                    return data
-        except (json.JSONDecodeError, KeyError):
+        except json.JSONDecodeError:
             continue
+        if data.get("is_adventure"):
+            adventures.append(data)
+
+    # Exact code first: substring matching lets PS-DC-PUB-1 claim "PS-DC-PUB-15 …".
+    words = scenario_name.split(None, 1)
+    if words:
+        first = words[0].upper()
+        for data in adventures:
+            if (data.get("code") or "").upper() == first:
+                return data
+
+    needle = scenario_name.upper()
+    for data in adventures:
+        for field in ("code", "title", "full_title"):
+            val = data.get(field) or ""
+            if val and (val.upper() in needle or needle in val.upper()):
+                return data
     return None
+
+
+def reconcile_adventure_code(adventure: dict, scenario_name: str) -> dict:
+    """Prefer the code in the scenario name (Warhorn / DM) over the catalog's.
+
+    Catalog codes come from DMsGuild listings, which are sometimes inconsistent
+    with the PDF (FR-DC-LOOSE-01 vs -001). Keep the catalog's other metadata.
+    """
+    code = leading_code(scenario_name)
+    if not code or code == (adventure.get("code") or "").upper():
+        return adventure
+    title = adventure.get("title") or scenario_name[len(code):].strip()
+    return {**adventure, "code": code, "full_title": f"{code} {title}".strip()}
 
 
 # -- Stage 4: Player registry & roster ----------------------------------------
@@ -887,6 +919,10 @@ def main():
         adventure = lookup_catalog(catalog_dir, scenario_name) if scenario_name else None
         if adventure:
             print(f"  Found: {adventure['full_title']}")
+            reconciled = reconcile_adventure_code(adventure, scenario_name)
+            if reconciled is not adventure:
+                print(f"  Catalog code {adventure.get('code')} differs from scenario; using {reconciled['code']}")
+                adventure = reconciled
         else:
             print("  Not found in catalog")
             if args.noprompt and scenario_name:

@@ -36,7 +36,7 @@ Tell the user which session page you found before proceeding.
 
 Before showing prompts, scan the session page for any `<img class="highlight-portrait">` tags whose `src` is the campaign default portrait (`/rpg/.../images/default-portrait.png`). For each one:
 
-1. Find the character's page under `public/characters/`. If it has `dnd_beyond:`, query the DDB proxy (`POST /proxy/character` with `characterId` extracted from the URL, path `ddb.character.decorations.avatarUrl`) and update both the character page `image:` field and the session page `src` attribute.
+1. Find the character's page under `public/characters/`. If it has `dnd_beyond:`, query the DDB proxy (`POST /proxy/character` with `characterId` extracted from the URL, path `ddb.character.decorations.avatarUrl`). **Don't hotlink that URL.** Download and convert it to `public/images/portraits/<slug>.webp` exactly as step 5 of the portrait rule in `/scrollcase-recap` says (WebP, 512px cap), then point both the character page `image:` field and the session page `src` attribute at the local `/rpg/<campaign>/public/images/portraits/<slug>.webp`.
 2. If the character page exists but has no `dnd_beyond:`, or there is no character page, ask the user: "No portrait found for <Character>. Do you have a D&D Beyond character link or portrait URL?" Apply whatever they provide, or skip if they decline.
 
 Once all portraits are resolved (or explicitly declined), proceed.

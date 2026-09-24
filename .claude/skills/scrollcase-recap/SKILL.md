@@ -81,11 +81,17 @@ One `<div class="highlight">` per player.
 
 Resolve each character's portrait with this priority order:
 
-1. **Local copy already exists** — if `public/images/portraits/<slug>.*` is present, use `/rpg/<campaign-slug>/public/images/portraits/<slug>.<ext>`.
+1. **Local copy already exists** — if `public/images/portraits/<slug>.webp` is present, use `/rpg/<campaign-slug>/public/images/portraits/<slug>.webp`. If only a stray non-WebP copy exists (`<slug>.png`/`.jpg`/`.jpeg`), convert it per step 5 and repoint any references.
 2. **Existing character page `image:`** — if `public/characters/<slug>.md` has an `image:` that is already a local `/rpg/.../images/portraits/...` path, use it as-is. If it is an external URL, treat it as a **source to download** (step 5), not a value to reuse.
-3. **`dnd_beyond:` on the character page** — extract the character ID and query the DDB proxy (`POST /proxy/character` with `characterId`) for `.character.decorations.avatarUrl`; that URL is a download source.
+3. **`dnd_beyond:` on the character page** — extract the character ID and query the DDB proxy (`POST /proxy/character` with `characterId`) for `.ddb.character.decorations.avatarUrl`; that URL is a download source.
 4. **Roster / context DDB link** — for characters with no page yet, take the `dnd_beyond:` URL from the context file or roster and query the proxy the same way.
-5. **Download to a local copy** — once a source URL is resolved, download it into `public/images/portraits/<slug>.<ext>`. Name the extension to match the **actual bytes**, not the URL: DDB avatar URLs end in `.jpeg?...&auto=webp` but frequently return PNG or WebP, so check the downloaded file's real type (`file --mime-type`) and name it accordingly. Reference the local path everywhere; never the source URL.
+5. **Download and convert to WebP** — once a source URL is resolved, download it to a temp file, then convert it into `public/images/portraits/<slug>.webp`. **Every portrait is WebP, capped at 512px on the long edge**, whatever the source format. DDB avatar URLs end in `.jpeg?...&auto=webp` but return PNG, JPEG or WebP unpredictably, so don't trust the extension; convert unconditionally:
+
+   ```
+   magick "<temp-download>" -auto-orient -strip -resize "512x512>" -quality 85 "public/images/portraits/<slug>.webp"
+   ```
+
+   Strip the query string (`?width=150&height=150&fit=crop...`) from DDB avatar URLs before downloading, so you get the full-size original rather than a 150px thumbnail. The page shows portraits at 72px, but clicking one opens it full size in a lightbox. The `512x512>` cap only shrinks, never enlarges. Delete the temp file afterward, and reference the local `.webp` path everywhere; never the source URL.
 6. **Ask the user** — if no source resolves, ask: "No portrait found for <Character>. Do you have a DDB character link or portrait URL?" Do not fall back to the default portrait without asking first.
 7. **Default portrait** — only after the user explicitly declines: campaign `default_portrait` from `campaign.yaml`, or the local `/rpg/<campaign>/public/images/default-portrait.png`.
 
@@ -193,7 +199,7 @@ For each player character in the roster:
 
 **New character** (no `public/characters/<slug>.md` exists): create the file. The slug is the character name slugified (e.g. `therion-starblade`, `pal-go-lucky`).
 
-Before creating new character pages, resolve DDB links for each new character: check the context file and roster for a `dnd_beyond:` URL; if not present, ask the user: "New characters found — do you have D&D Beyond character links for any of them?" (list the new characters). If the user provides links, use them. If they decline, omit the field. Once you have a `dnd_beyond:` URL, query the DDB proxy for the portrait and **download it to a local copy** as described in the Player Highlights portrait rule — the `image:` field must be the local `/rpg/.../images/portraits/<slug>.<ext>` path, never the DDB/Forge source URL.
+Before creating new character pages, resolve DDB links for each new character: check the context file and roster for a `dnd_beyond:` URL; if not present, ask the user: "New characters found — do you have D&D Beyond character links for any of them?" (list the new characters). If the user provides links, use them. If they decline, omit the field. Once you have a `dnd_beyond:` URL, query the DDB proxy for the portrait and **download and convert it to a local WebP** as described in the Player Highlights portrait rule — the `image:` field must be the local `/rpg/.../images/portraits/<slug>.webp` path, never the DDB/Forge source URL.
 
 ```yaml
 ---
@@ -205,7 +211,7 @@ player: <Player Name>
 player_slug: <registry slug — required>
 class: <Race Class Level>
 dnd_beyond: <https://www.dndbeyond.com/characters/<ID> — omit if unknown>
-image: </rpg/<campaign>/public/images/portraits/<slug>.<ext> — the LOCAL copy downloaded per the portrait rule, never a DDB/Forge URL; omit only if no portrait exists>
+image: </rpg/<campaign>/public/images/portraits/<slug>.webp — the LOCAL WebP copy made per the portrait rule, never a DDB/Forge URL; omit only if no portrait exists>
 ---
 
 ## Appearances

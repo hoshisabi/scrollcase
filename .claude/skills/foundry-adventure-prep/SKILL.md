@@ -17,6 +17,9 @@ This is **mechanical extraction, not creative planning.** Don't ask about story,
 | **Adventure asset folders** | `D:\FoundryVTT\Data\img\adventures\<CODE> <Title>\` | One per adventure, flat (no subfolders). Siblings show the naming convention across every line |
 | Local working worlds | `D:\FoundryVTT\Data\worlds\` | Dan builds scenes, actors, and journals here by hand |
 | Downloads (PDFs, map zips) | `D:\Downloads\` | DMsGuild files carry a numeric prefix (`1533714-`, `2571479-`) that is a download/vendor id, **not** the product id |
+| **AL module library** | `H:\My Drive\AL\Adventures-FR-Official\<Season>\` (DDAL, DDEP, DDIA by season), `H:\My Drive\AL\Adventures-FR-Community\` (DC, CCC) | Check here as well as Downloads. File names drop the zero (`DDAL6-01 - <Title>.pdf`) where the module prints `DDAL06-01` |
+| Old download archive | `\\blueglow\mondo\Users\decha\Downloads\Adventure League\` | A 2019 archive by season with map packs and certs. blueglow is usually powered off, so ask Dan. Copy anything H: is missing into the matching H: folder |
+| DDB proxy | `http://localhost:3000` (`C:\Users\decha\dev\ddb-proxy`, `node index.js`) | For 2014 → 2024 stat-block lookups (Step 4b). Cobalt token: scrollcase `.env` |
 | **Finished bundles** | `D:\Downloads\Foundry Transfer\` | Adventure Bundler exports, one `.zip` per completed adventure. A zip here means the adventure is done, past prep |
 | Adventure catalog (rich) | `C:\Users\decha\dev\al_adventure_catalog\maintaindb\_dc\*.json` | `code`, `title`, `authors`, `level_range`, `apl`, `tiers`, `season`, `hours`, `url` (affiliate link already included) |
 | Adventure catalog (flat) | `C:\Users\decha\dev\al_adventure_catalog\assets\data\catalog.json` | `{adventures:[{c: code, n: title, i: product id, a: authors, …}]}`; URL = `https://www.dmsguild.com/product/{i}/?affiliate_id=171040` |
@@ -27,9 +30,10 @@ This is **mechanical extraction, not creative planning.** Don't ask about story,
 
 ## Step 1: Identify the module and its files
 
-- Find the PDF and companions in `D:\Downloads`: glob by code or title fragments. Expect some mix of:
+- Find the PDF and companions in `D:\Downloads` and the AL library on H:. Glob by code (with and without the zero: `DDAL6-01`, `DDAL06-01`) or title fragments. Expect some mix of:
   - the adventure PDF, sometimes `(FULL_VERSION)` alongside a `(DM_Guide_Maps_Print-Friendly)` PDF
   - map zip(s), e.g. `…PS-DC-PUB-13_to_16_Maps_etc.zip` covering several adventures, or `…MAPS_A-D.zip` **plus** a `…(DM_Copy).zip`
+  - official DDAL: a `(Digital Map Pack).zip` of one-map **PDFs** and/or a `Deluxe Maps.pdf` (usually the same maps), a `(CERT).pdf`, and Fantasy Grounds `.mod` files (ignore)
   - loose map JPGs/PNGs, VTT token assets (e.g. `…(Token_Asset_for_VTT_25x25).png`), and regional handout maps
 - Catalog lookup for the header line: grep `maintaindb\_dc` for the code **or the title** (codes drift: the catalog has `FR-DC-LOOSE-01` where the PDF says `-001`), then read the record with `jq`. Fall back to `catalog.json`. **The PDF's printed code wins** for the folder name; note any catalog mismatch.
 - Folder name: `<CODE> <Title>`, both as printed in the module (e.g. `PS-DC-PUB-15 Spider Hunt`, `FR-DC-GAMEJAM-01 Only (Peacock) Fans`).
@@ -47,9 +51,10 @@ uv run --with pymupdf --with pillow python "<skill>\scripts\prep_adventure.py" -
 - **No map download at all?** As a last resort, rip maps from the PDF:
   `uv run --with pymupdf --with pillow --with numpy python "<skill>\scripts\pdf_assets.py" images "<pdf>" "%TEMP%\<code>-imgs"`
   Look at the candidates, then feed the keepers in via `--maps`, renamed to display names (`Luskan Market.png`).
+- **Maps supplied as PDFs** (official DDAL map packs, `Deluxe Maps.pdf`): the script only takes images, so run `pdf_assets.py images` on the map PDF the same way. Name keyed versions `<Map> (GM)` and B&W versions `<Map> (B&W)`. Dan likes the map-pack PDF copied into the folder too, via `--pdf`.
 - **GM markers printed on a PDF map** (spawn letters, "Party Start" boxes): make a player copy with the markers painted over and the grid redrawn in the sampled line colour and width (Pillow). Keep the marked one as `<Name> (GM).webp`, and record marker positions as grid squares in the Prep Doc for token placement.
 - **Map transforms the text asks for:** read the adventure's map notes. It may call for a rotation to match the printed appendix, or a doubled grid ("34 × 44"), which is a Foundry grid-density setting, not a resize. For tall portrait battle maps, offer a landscape `(Rotated)` variant, since landscape reads better on a monitor.
-- **Cover:** always **Read `!Cover.webp` to confirm it's really the cover.** Sources, in order: the PDF front page (the default, usually right), then the DMsGuild product page, then ask Dan. **Never scrape DMsGuild.** Open the product page in the browser, have Dan save the image, then rerun with `--cover "<that image>"`.
+- **Cover:** always **Read `!Cover.webp` to confirm it's really the cover.** Sources, in order: the PDF front page (the default, usually right), then the DMsGuild product page, then ask Dan. Official DDAL front pages are the AL-logo title page with no art. That page is the cover. **Never scrape DMsGuild.** Open the product page in the browser, have Dan save the image, then rerun with `--cover "<that image>"`.
 - **Verify, don't trust:** list the folder with sizes and webp dimensions (the script prints this).
 
 ## Step 3: Grids (a toolbox; Dan finishes by eye)
@@ -62,6 +67,7 @@ uv run --with pymupdf --with pillow --with numpy python "<skill>\scripts\pdf_ass
 - The only numbers Foundry needs are **Grid Size (px)** and the **Offset (H/V px)**. Everything else is constant: Square, 5 ft, padding 0.25.
 - **Grid scale is per map pack, not per adventure.** Never extrapolate a confirmed value from one map to another in the same zip. In GAMEJAM-01 the Docks were 140 px at 1:1, but the `TC_ItW Forest` maps needed **70 px with the image scaled to 0.971** (they measure about 71.6).
 - The PS-DC-PUB series is about **70 px/5 ft**, even when the image isn't an exact multiple (Spider Hunt is 1118 × 1538).
+- **Read the map's own scale legend.** Hand-drawn graph-paper maps (Season 6) can print `□ = 10 feet` on one map and 5 ft on another in the same adventure. On a 10-ft map the VTT grid is half the paper square.
 - For weak signal (painted or gridless maps), use the filename or credits (`16x22`, `22x17`, `72 DPI`) or a square count from the text. Overview and town maps with scale bars (200 ft) aren't gridded: say so.
 - Report values as **measured, not confirmed**. Write "confirmed" only after Dan has lined the grid up in Foundry (its ruler tool: SHIFT+wheel scales the image, ALT+wheel changes grid size, arrow keys shift the offset).
 
@@ -71,8 +77,20 @@ uv run --with pymupdf --with pillow --with numpy python "<skill>\scripts\pdf_ass
 - Layout manifest: `uv run --with pymupdf python "<skill>\scripts\analyze_layout.py" "<pdf>"` (`--json` is also available). It finds shaded sidebars (labelled `npc`, `callout`, `modifier`, or `boilerplate`, with body text and the nearest heading), lists which pages actually need vision (cover, map, modifier boxes beside stat blocks), cross-checks creatures named in "Adjusting the Scene" against stat blocks, and flags player-handout appendices and "Roll a dX" tables.
   - **It's tuned to the PS-DC-PUB template and fails safe elsewhere.** "0 boxes" on an unfamiliar template means the template wasn't scanned, not that nothing is there. GAMEJAM-01's coral `<Creature> (<Flavor>) MODIFICATIONS` boxes, one per stat block in a Creature Statistics appendix, were missed entirely at first. On a new template, page through the stat-block appendix by vision.
   - Treat each QA "missing stat block" flag as something to **verify**: it may be a reflavoured block, a plain Monster Manual lookup, or a genuine omission to prep.
+- **Official DDAL template (seen in Season 6; earlier seasons are likely the same or harder to parse):** every heading, stat-block name, and sidebar title is drawn as graphics, so the text layer has none of them. Stat blocks extract nameless (just "Small humanoid (kobold), lawful evil"), and `analyze_layout.py` finds the sidebars but no headings. Render every page (`pdf_assets.py render "<pdf>" "%TEMP%\<code>-pages"`, 75 dpi reads fine) and read headings and names from the images, with the extracted text alongside for the verbatim wording.
 - Vision-read only the pages that need it: render with PyMuPDF (`page.get_pixmap(dpi=…)`) and Read the PNG. The cover is usually a flattened image with no text layer, so transcribe the Overview from the rendered cover.
 - A sidebar is often **repeated beside each affected stat block with different scope wording**. Take the union (Spider Hunt: "drow and driders" on one page, "the drow" on the next, so all three drow blocks). Ask Dan only when the instances genuinely conflict. If you can't attribute a sidebar, include it near the monster list anyway.
+
+## Step 4b: 2014 stat blocks → 2024
+
+Dan runs 2014-era modules with 2024 rules. Early modules often reskin a stock block: they rename it, change the size and HP dice, adjust a score or two, swap a weapon, and add race traits. The module's "Winged Kobold (Urd) Spy" is the Spy made Small, winged, and kobold.
+
+- **Find the base.** `uv run --project C:\Users\decha\dev\scrollcase python "<skill>\scripts\ddb_monsters.py" search <likely base names>` lists DDB matches with source, legacy flag, and ability scores. A matching or nearly matching score array is the tell. Then `show <id> ...` for the 2014 block (legacy) and the 2024 one (source "Monster Manual", not legacy).
+- **Reskin of a stock block:** write a **2024 conversion**. Start from the 2024 base block and carry over the module's changes, plus what follows from them: AC, initiative, attack and damage bonuses, skills, passive Perception. Added traits take their 2024 wording (Sunlight Sensitivity now covers all ability checks). Note what the 2024 base changes compared with the module's version (the 2024 Spy trades Multiattack and Sneak Attack for poison damage on every hit; the 2024 Scout loses Keen Hearing and Sight).
+- **Custom NPCs with no 2024 base** stay as printed. Sik'garuk, for example, is a *Volo's* scale sorcerer raised to CR 3, and 2014-format spellcasting still runs fine at a 2024 table.
+- ***Volo's* and *Mordenkainen's* creatures** were updated in *Monsters of the Multiverse*, and those versions can differ from what the module uses (Kobold Inventor's INT, the scale sorcerer's spell list). When module text depends on a specific ability, such as the inventor's rot grub pot, use the module's block.
+- **Stock creatures with a 2024 Monster Manual version** (dire wolf, giant weasel, insect swarms): use DDB's 2024 block, with no conversion needed.
+- Conversions aren't module text. Label each one `(2024 conversion)`, keep the verbatim 2014 block too, and put a base-block table first (module creature | 2014 base | 2024 base | module's changes carried over).
 
 ## Step 5: Write `Prep Doc.md`
 
@@ -100,6 +118,12 @@ Front-page text verbatim: title lines, blurb, the "A Two-Hour Adventure for…" 
 (These seed the Bundler export: the blurb becomes the adventure description and the "A Two-Hour…" line the caption.)
 **Structure:** one bullet per part (what happens, what's a fight or puzzle, story objectives). Series or sequel notes if relevant.
 
+## Timing
+The module's per-part estimates ("Estimated Duration: 30 minutes") turned into clock times from the session start
+(PandoDnD: Wednesday 7:00 PM; ask if it's a different game). Checkpoints to steer pace, not a script.
+| Part | Est. | Start | Be here by |
+If the module gives no per-part durations, split its total by part weight and say so.
+
 ## Maps
 In this folder: `<full folder path>`
 | Map | Type | Foundry file | Pixels | Grid | Original |     <- Original LAST: long source filenames blow out the column width
@@ -113,6 +137,7 @@ Mark sidebar-modified creatures with a trailing ` \*`, then a blockquote per sid
 ### Stat blocks (importer text)           (ONLY for creatures Dan can't drag from the DDB Monsters compendium:
                                           module-custom blocks. Plain text in ```text blocks, standard 5e layout;
                                           fill in missing average damage such as "6 (1d6 + 3)" and say so)
+### 2024 conversions                     (Step 4b: base-block table, then each converted block labelled "(2024 conversion)")
 
 ## Rolltable: <Name> (dX, <when>)        (verbatim table; note that it *could* be a Foundry Rolltable, but don't build one unless asked)
 ## Group Checks / Puzzles               (outcome tables and puzzle answers Dan needs at hand, verbatim)
@@ -121,14 +146,21 @@ Mark sidebar-modified creatures with a trailing ` \*`, then a blockquote per sid
                                         player-fill columns. Render to `Handout - <Title>.webp` only when the layout carries meaning)
 
 ## Rewards
-### Advancement
+### Advancement                        (XP-era modules print XP tables: keep them verbatim under a one-line note that current AL advancement replaces them)
 ### Reward: <Item Name>                (heading matches the Foundry journal-page name)
 *Type, Rarity (Attunement)*  then the full text verbatim: mechanics, minor properties, flavor, "This item is found in…"
 
 ## Gold
 The "If found during the adventure the following items are converted to gold…" intro, verbatim if present.
 | Item | Gold Value |  ending in **Maximum**, then an italic sanity check that the items sum to it.
+If the module prints no total (official DDAL), add it up yourself and say so.
 Odd rows are usually legitimate (Spider Hunt's "Reward — 500 gp" is an NPC bounty): keep them, and at most mention them.
+
+**`/rewards` line** (P4ND0-bot): end the Gold section with the `rewards:` argument ready to paste, e.g.
+`116.67gp each, ring of protection (guardian), scroll of tongues`. The bot adds the adventure name,
+"10 downtime, level if you want it", streaming time, and player mentions itself, so give only gold per
+player and the items. Show how to work out gold per player (maximum ÷ party size, or per-player amounts
+as the module states them), since the actual amount depends on play.
 
 ## Errata                              (truncated tables, missing abilities, inconsistencies)
 ```
@@ -151,5 +183,8 @@ Link `Prep Doc.md` in the report, and summarize:
 - **Journals:** a GM journal named after the adventure (with `Reward: <item>` pages), plus an **empty-by-design** `<Adventure> (player)` journal (Observer for everyone). He drags entries into the player journal during play, so an empty player journal isn't a gap.
 - **Pasting:** Foundry's default journal editor strips Markdown `*`/`**` on paste; he re-applies them or sets the page format to Markdown.
 - **Export:** Adventure Bundler (v0.2.5) to `D:\Downloads\Foundry Transfer\<CODE> <Title>.zip`, then import on the server.
+- **After export:** in `C:\Users\decha\dev\P4ND0-bot`, run `uv run python scripts/update_prepped.py` and commit `prepped_adventures.json`, so `/wishlist` knows the adventure is ready to run. Add the zip to its `SKIP` or `BUNDLES` map if it's a one-off or a multi-adventure bundle.
 
-Nothing here is a git repo, so don't commit. After the session, `/scrollcase-prep` handles the transcript.
+**At the table, P4ND0-bot already covers:** `/gotime-preview` then `/gotime` (logs the voice channel's players and their `/character play` picks, flags anyone with no character set, gives the OBS text) and `/rewards` at the end. Don't duplicate these in the Prep Doc; just feed `/rewards` its line.
+
+The Foundry adventure folder isn't a git repo, so there's nothing to commit for the prep itself. After the session, `/scrollcase-prep` handles the transcript.

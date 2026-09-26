@@ -5,6 +5,7 @@ eyeball finishes (especially grids). Run via uv so nothing needs installing:
 
     uv run --with pymupdf --with pillow --with numpy python pdf_assets.py text <pdf> [<out.txt>]
     uv run --with pymupdf --with pillow --with numpy python pdf_assets.py images <pdf> <scratch_dir>
+    uv run --with pymupdf --with pillow --with numpy python pdf_assets.py render <pdf> <scratch_dir> [<dpi>]
     uv run --with pymupdf --with pillow --with numpy python pdf_assets.py grid [--preview <dir>] <image> [...]
 
 text:   page-delimited text via PyMuPDF (pypdf splits DMsGuild PDFs one word per line).
@@ -12,6 +13,8 @@ text:   page-delimited text via PyMuPDF (pypdf splits DMsGuild PDFs one word per
 images: every embedded image >= 400 px on a side -> <scratch_dir>/p<page>_img<n>.<ext>.
         Use this only when a map isn't supplied as a separate download. Write to a
         scratch dir, not the Foundry folder; rename/convert the keepers afterwards.
+render: every page -> <scratch_dir>/page<NN>.png at <dpi> (default 75), for reading
+        headings and names that the text layer lacks (official DDAL template).
 grid:   estimates grid size and offset per axis independently (X and Y can differ)
         from drawn grid lines, via high-pass + autocorrelation. --preview writes
         <name>.grid-preview.png with the estimate overlaid in red, to check by eye.
@@ -47,6 +50,16 @@ def images(pdf: Path, out: Path) -> None:
             name = f"p{pno}_img{n}.{info['ext']}"
             (out / name).write_bytes(info["image"])
             print(f"page {pno}: {out / name}  {info['width']}x{info['height']}")
+
+
+def render(pdf: Path, out: Path, dpi: int) -> None:
+    import pymupdf
+
+    out.mkdir(parents=True, exist_ok=True)
+    doc = pymupdf.open(pdf)
+    for pno, page in enumerate(doc, start=1):
+        page.get_pixmap(dpi=dpi).save(out / f"page{pno:02d}.png")
+    print(f"{out}: {len(doc)} pages at {dpi} dpi")
 
 
 def _period(profile):
@@ -124,6 +137,8 @@ if __name__ == "__main__":
         text(Path(args[1]), Path(args[2]) if len(args) > 2 else None)
     elif len(args) == 3 and args[0] == "images":
         images(Path(args[1]), Path(args[2]))
+    elif len(args) in (3, 4) and args[0] == "render":
+        render(Path(args[1]), Path(args[2]), int(args[3]) if len(args) == 4 else 75)
     elif len(args) >= 2 and args[0] == "grid":
         rest, prev = args[1:], None
         if rest[0] == "--preview":

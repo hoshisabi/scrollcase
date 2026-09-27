@@ -42,8 +42,14 @@ The campaign applies a base style prefix automatically. Tags in the prompt selec
 | Tag | When to use |
 |---|---|
 | *(no tag)* | NPC portraits, outdoor locations — arctic exterior context added automatically |
-| `[interior]` | Indoor scenes: shelters, chambers, ruins interiors — replaces arctic exterior with warm stone interior |
+| `[interior]` | Indoor scenes: shelters, chambers, ruins interiors — replaces arctic exterior with a neutral enclosed interior; name the walls in the prompt (timber, hide, worked stone) |
+| `[cavern]` | Natural caves and underground passages — rough rock and deep shadow instead of built stonework |
+| `[lodge]` | Timber and hide shelters: lean-tos, tents, longhouses, hunting lodges |
+| `[ruins]` | Ancient worked-stone interiors: Netherese complexes, the academy |
+| `[camp]` | Exterior variant: snowbound camp of hide tents and cookfires (keeps the snow context) |
 | `[treasure]` | Item close-ups — tight shot on a magical object, no character |
+
+`[cavern]`, `[lodge]`, `[ruins]` and `[camp]` are Icewind Dale tags; for other campaigns, check `image_prompt_tags` in that campaign's `campaign.yaml`.
 
 Write the tag at the start of the prompt string, e.g. `"[interior] a dusty stone passage..."`.
 
@@ -116,7 +122,7 @@ Do **not** include DM-only information (future plot hooks, secrets the party has
 
 ### Image prompt
 
-Draft an image prompt following the style of existing pages of the same type. Apply the correct tag (`[interior]`, `[treasure]`, or none). The campaign style prefix is applied automatically — do not repeat it in the prompt.
+Draft an image prompt following the style of existing pages of the same type. Apply the correct tag (`[interior]`, `[cavern]`, `[lodge]`, `[ruins]`, `[camp]`, `[treasure]`, or none — see the tag table above). The campaign style prefix is applied automatically — do not repeat it in the prompt.
 
 ## Step 4 — Image prompt review
 

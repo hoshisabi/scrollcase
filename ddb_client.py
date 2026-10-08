@@ -1,7 +1,10 @@
 """
-Thin wrapper around the local ddb-proxy (https://github.com/MrPrimate/ddb-proxy).
+Thin wrapper around ddb-proxy (https://github.com/MrPrimate/ddb-proxy).
 Reads COBALT_COOKIE and optionally DDB_PROXY_URL from .env.
-The proxy must be running before any method is called.
+
+Without DDB_PROXY_URL the client tries the proxy on blueglow first, then
+localhost, and uses the first one that answers /ping. DDB_PROXY_URL may be a
+single URL (used as-is) or a comma-separated list (tried in order).
 """
 import os
 
@@ -10,7 +13,30 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-_DEFAULT_PROXY_URL = "http://localhost:3000"
+_DEFAULT_PROXY_URLS = ("http://blueglow:3000", "http://localhost:3000")
+_PING_TIMEOUT = 3
+
+
+def _candidate_urls(proxy_url: str | None) -> list[str]:
+    raw = proxy_url or os.getenv("DDB_PROXY_URL")
+    if raw:
+        urls = [u.strip() for u in raw.split(",") if u.strip()]
+    else:
+        urls = list(_DEFAULT_PROXY_URLS)
+    return [u.rstrip("/") for u in urls]
+
+
+def find_proxy_url(candidates: list[str]) -> str:
+    """Return the first candidate whose /ping answers; raise if none do."""
+    for url in candidates:
+        try:
+            if requests.get(f"{url}/ping", timeout=_PING_TIMEOUT).ok:
+                return url
+        except requests.RequestException:
+            continue
+    raise ConnectionError(
+        "No ddb-proxy answered /ping at: " + ", ".join(candidates)
+    )
 
 
 class DDBClient:
@@ -20,13 +46,14 @@ class DDBClient:
         proxy_url: str | None = None,
     ):
         self.cobalt = cobalt_token or os.getenv("COBALT_COOKIE")
-        self.proxy_url = (
-            proxy_url or os.getenv("DDB_PROXY_URL") or _DEFAULT_PROXY_URL
-        ).rstrip("/")
         if not self.cobalt:
             raise ValueError(
                 "Cobalt token required: set COBALT_COOKIE in .env or pass cobalt_token="
             )
+        candidates = _candidate_urls(proxy_url)
+        self.proxy_url = (
+            candidates[0] if len(candidates) == 1 else find_proxy_url(candidates)
+        )
 
     def _post(self, path: str, data: dict | None = None) -> dict:
         payload = {"cobalt": self.cobalt, **(data or {})}

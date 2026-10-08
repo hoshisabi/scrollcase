@@ -5,7 +5,8 @@ Early AL modules often rename a stock block and tweak one or two things (a
 the module's stats against DDB's, then build the 2024 conversion from the
 2024 base plus the module's changes.
 
-Needs the local ddb-proxy running (http://localhost:3000/ping -> pong) and
+Needs ddb-proxy running on blueglow or locally (DDBClient tries
+http://blueglow:3000 first, then http://localhost:3000) and
 COBALT_COOKIE in scrollcase's .env. Run with scrollcase's environment:
 
     uv run --project C:\\Users\\decha\\dev\\scrollcase python ddb_monsters.py search Spy Scout Kobold

@@ -8,14 +8,20 @@ from any client.
 Repo: https://github.com/MrPrimate/ddb-proxy  
 Local path: `~/dev/ddb-proxy`
 
-## Starting the proxy
+## Where it runs
+
+The usual instance runs on **blueglow** at `http://blueglow:3000`. A local
+copy on `http://localhost:3000` is the fallback. `ddb_client.py` and the
+scrollcase skills try blueglow first and use whichever answers `/ping`.
+
+To start a local copy:
 
 ```powershell
 cd ~/dev/ddb-proxy
 node index.js        # runs on http://localhost:3000
 ```
 
-Verify it's up: `curl http://localhost:3000/ping` → `pong`
+Verify it's up: `curl http://blueglow:3000/ping` (or `http://localhost:3000/ping`) → `pong`
 
 ## The Cobalt Token
 
@@ -50,7 +56,9 @@ on DDB while the Network tab is open, then:
 ## Python client
 
 `ddb_client.py` wraps all proxy endpoints. It reads `COBALT_COOKIE`
-and optionally `DDB_PROXY_URL` from `.env`.
+and optionally `DDB_PROXY_URL` from `.env`. Without `DDB_PROXY_URL` it
+tries `http://blueglow:3000`, then `http://localhost:3000`. A single
+`DDB_PROXY_URL` is used as-is; a comma-separated list is tried in order.
 
 ```python
 from ddb_client import DDBClient

@@ -101,7 +101,14 @@ Build a lookup table keyed by character name for use in roster building.
 
 Use the DDB proxy to fetch authoritative character data **whenever a DDB character ID is known from any source** — a Foundry JSON, a link the user provided, or a prior session / character page (see Step 5b). It is **not** gated on Foundry being present; drop-in campaigns usually have no Foundry exports but still have DDB IDs in the repo. When both DDB and Foundry data exist, **always prefer DDB** — Foundry exports can be stale (wrong level, subclass, or race). DDB also fixes the phonetic misspellings the transcript introduces (e.g. "Z'lai Ventel" → **Zeli Vantel**, "Terry" → **Tarrie**).
 
-**Check the proxy is up:** `Invoke-RestMethod http://localhost:3000/ping` → returns `pong`. If it does **not** respond and you have DDB IDs to verify, tell the user the proxy is down and ask them to start it, then re-check — don't silently skip verification when DDB IDs are in play.
+**Find a running proxy:** try blueglow first, then localhost, and use the first that returns `pong`:
+```powershell
+$proxy = $null
+foreach ($u in 'http://blueglow:3000', 'http://localhost:3000') {
+    try { if ((Invoke-RestMethod "$u/ping" -TimeoutSec 3) -eq 'pong') { $proxy = $u; break } } catch {}
+}
+```
+If neither responds and you have DDB IDs to verify, tell the user the proxy is down and ask them to start it, then re-check — don't silently skip verification when DDB IDs are in play.
 
 **Extract the DDB character ID from each Foundry JSON:**
 ```powershell
@@ -111,7 +118,7 @@ $ddbId = $j.flags.ddbimporter.dndbeyond.characterId
 **Fetch all characters in parallel:**
 ```powershell
 $body = @{ characterId = $ddbId; cobalt = $cobalt } | ConvertTo-Json
-$r = Invoke-RestMethod "http://localhost:3000/proxy/character" -Method POST -Body $body -ContentType "application/json" -TimeoutSec 15
+$r = Invoke-RestMethod "$proxy/proxy/character" -Method POST -Body $body -ContentType "application/json" -TimeoutSec 15
 $c = $r.ddb.character
 $name    = $c.name
 $race    = $c.race.fullName

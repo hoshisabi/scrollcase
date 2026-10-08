@@ -83,7 +83,7 @@ Resolve each character's portrait with this priority order:
 
 1. **Local copy already exists** — if `public/images/portraits/<slug>.webp` is present, use `/rpg/<campaign-slug>/public/images/portraits/<slug>.webp`. If only a stray non-WebP copy exists (`<slug>.png`/`.jpg`/`.jpeg`), convert it per step 5 and repoint any references.
 2. **Existing character page `image:`** — if `public/characters/<slug>.md` has an `image:` that is already a local `/rpg/.../images/portraits/...` path, use it as-is. If it is an external URL, treat it as a **source to download** (step 5), not a value to reuse.
-3. **`dnd_beyond:` on the character page** — extract the character ID and query the DDB proxy (`POST /proxy/character` with `characterId`) for `.ddb.character.decorations.avatarUrl`; that URL is a download source.
+3. **`dnd_beyond:` on the character page** — extract the character ID and query the DDB proxy (`http://blueglow:3000`, falling back to `http://localhost:3000` if blueglow doesn't answer `/ping`; `POST /proxy/character` with `characterId`) for `.ddb.character.decorations.avatarUrl`; that URL is a download source.
 4. **Roster / context DDB link** — for characters with no page yet, take the `dnd_beyond:` URL from the context file or roster and query the proxy the same way.
 5. **Download and convert to WebP** — once a source URL is resolved, download it to a temp file, then convert it into `public/images/portraits/<slug>.webp`. **Every portrait is WebP, capped at 512px on the long edge**, whatever the source format. DDB avatar URLs end in `.jpeg?...&auto=webp` but return PNG, JPEG or WebP unpredictably, so don't trust the extension; convert unconditionally:
 

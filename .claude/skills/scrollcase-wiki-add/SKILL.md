@@ -157,7 +157,19 @@ uv run python generate_artwork.py `
 
 Note: always use `--campaign-dir` with the explicit path — do not rely on `.env` CAMPAIGN_DIR.
 
-After generation, display the image with the Read tool so the user can see it.
+After generation, show the image so the user doesn't have to find it in the folder:
+
+1. Read the image with the Read tool, so you can see it too. Point out anything visibly off (garbled text, extra limbs, a subject that doesn't match the page) — briefly, without grading the art.
+2. In your reply, embed it as markdown with its absolute path, forward slashes:
+
+   ```markdown
+   ![thessaly-vorn](C:/Users/decha/dev/hoshisabi.github.io/rpg/icewind-dale/public/npcs/images/thessaly-vorn.png)
+   ```
+
+   T3 Code and the Claude desktop app render this inline.
+3. If `$env:CLAUDE_CODE_ENTRYPOINT` is `cli` (Claude Code in a terminal, which can't render images), also open it in the default viewer: `Invoke-Item <path>`.
+
+Do the same after every regeneration.
 
 Then use AskUserQuestion:
 

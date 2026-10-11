@@ -94,14 +94,15 @@ If the script errors (missing GOOGLE_KEY, network failure, etc.), report the mes
 After generation completes, say "Generated <N> image(s) under `public/sessions/images/`." and show them so the user doesn't have to find them in the folder:
 
 1. Read each generated image with the Read tool, so you can see it too. Point out anything visibly off (garbled text, extra limbs, a badge border cut through the subject) — briefly, without grading the art.
-2. In your reply, embed each image as markdown with its absolute path, forward slashes, numbered to match the prompts:
+2. Display them in the window, depending on the host:
+   - **Claude desktop app** (`$env:CLAUDE_CODE_ENTRYPOINT` is `claude-desktop`): open each image in the Files pane with `mcp__ccd_view__show_pane` (`pane: "file"`, `path: <image>`). That pane only opens files inside the session's folders or the scratchpad, so if the image path is refused, copy the images into `<scratchpad>\artgen\` first (`Copy-Item … -Force`) and open the copies. Markdown image embeds with local paths don't render in the desktop app, and `SendUserFile` shows only a file card.
+   - **T3 Code**: embed each image as markdown with its absolute path, forward slashes, numbered to match the prompts:
 
-   ```markdown
-   **1.** ![2026-05-20-1](C:/Users/decha/dev/hoshisabi.github.io/rpg/pandodnd/public/sessions/images/2026-05-20-1.png)
-   ```
+     ```markdown
+     **1.** ![2026-05-20-1](C:/Users/decha/dev/hoshisabi.github.io/rpg/pandodnd/public/sessions/images/2026-05-20-1.png)
+     ```
 
-   T3 Code and the Claude desktop app render these inline.
-3. If `$env:CLAUDE_CODE_ENTRYPOINT` is `cli` (Claude Code in a terminal, which can't render images), also open them in the default viewer: `Invoke-Item <path>` for each image.
+   - **Terminal** (`$env:CLAUDE_CODE_ENTRYPOINT` is `cli`, which can't render images): open each in the default viewer with `Invoke-Item <path>`.
 
 Show only the images generated in this run. After a regenerate, show just the replaced image(s) the same way.
 

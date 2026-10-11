@@ -96,17 +96,25 @@ After generation completes, say "Generated <N> image(s) under `public/sessions/i
 1. Read each generated image with the Read tool, so you can see it too. Point out anything visibly off (garbled text, extra limbs, a badge border cut through the subject) — briefly, without grading the art.
 2. Display them in the window, depending on the host:
    - **Claude desktop app** (`$env:CLAUDE_CODE_ENTRYPOINT` is `claude-desktop`): open each image in the Files pane with `mcp__ccd_view__show_pane` (`pane: "file"`, `path: <image>`). That pane only opens files inside the session's folders or the scratchpad, so if the image path is refused, copy the images into `<scratchpad>\artgen\` first (`Copy-Item … -Force`) and open the copies. Markdown image embeds with local paths don't render in the desktop app, and `SendUserFile` shows only a file card.
-   - **T3 Code**: embed each image as markdown with its absolute path, forward slashes, numbered to match the prompts:
+   - **T3 Code**: embed each image as markdown, numbered to match the prompts. Two T3 quirks:
+     - It caches images by path, so after a regenerate the original path still shows the old image (a `?v=` query string doesn't help). Copy each image to a fresh name first and embed the copy:
 
-     ```markdown
-     **1.** ![2026-05-20-1](C:/Users/decha/dev/hoshisabi.github.io/rpg/pandodnd/public/sessions/images/2026-05-20-1.png)
-     ```
+       ```powershell
+       $dir = Join-Path $env:TEMP 'scrollcase-preview'; New-Item -ItemType Directory -Force $dir | Out-Null
+       $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+       Copy-Item <image> (Join-Path $dir "<image-stem>-$stamp.png")
+       ```
 
+       ```markdown
+       **1.** ![2026-05-20-1](C:/Users/decha/AppData/Local/Temp/scrollcase-preview/2026-05-20-1-20260520-213004.png)
+       ```
+
+     - It only renders images in the final message of a turn, not in text written before a tool call. So put the images at the end of your reply and ask the review question below in plain chat ("All good, regenerate N, or change prompt N?"), ending the turn. Don't use AskUserQuestion for it.
    - **Terminal** (`$env:CLAUDE_CODE_ENTRYPOINT` is `cli`, which can't render images): open each in the default viewer with `Invoke-Item <path>`.
 
 Show only the images generated in this run. After a regenerate, show just the replaced image(s) the same way.
 
-Then use AskUserQuestion:
+Then ask (AskUserQuestion, except in T3 Code — see above):
 
 - question: "How do the generated images look?"
 - header: "Review"

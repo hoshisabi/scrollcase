@@ -151,3 +151,21 @@ git add rpg/<campaign>/
 git commit -m 'session YYYY-MM-DD'
 git push
 ```"
+
+## Step 7 — Clean up preview copies
+
+Only if Step 5 made preview copies (T3 Code). List them with their total size:
+
+```powershell
+Get-ChildItem (Join-Path $env:TEMP 'scrollcase-preview') -Filter '<YYYY-MM-DD>*.png'
+```
+
+Then use AskUserQuestion:
+
+- question: "Delete the <N> preview copies in %TEMP%\scrollcase-preview (<size>)?"
+- header: "Cleanup"
+- options:
+  - "Yes — delete them" (Recommended) — `Remove-Item` exactly the files listed, nothing else in the folder
+  - "No — keep them"
+
+The originals under `public/sessions/images/` are untouched either way.

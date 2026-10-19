@@ -75,6 +75,15 @@ Present a short numbered list (4-8 items) of things that could go into the next 
 
 Once the shape of the session is clear, draft `YYYY-MM-DD-prep.md`. Use the most recent existing `*-prep.md` as a loose structural reference (e.g. a Session Structure timing table, scene-by-scene breakdown, Main Encounter with stat notes, NPCs to Have Ready, Rewards, Notes) — but adapt sections to what this session actually needs. Not every session needs a combat encounter or a rewards table.
 
+**Never script the player characters.** Players control their PCs, and nobody can predict what they'll do, say, feel, or decide. Prep covers NPCs, the environment, DCs, and *what happens if* a PC does something. It must not include:
+- PC dialogue or a PC's "response" (no "Berg argues…", no lines in a PC's mouth)
+- PC sensations or reactions as fixed beats ("Joseph's nausea rises as he walks…")
+- An assumed PC or party choice that later blocks depend on (an NPC "comes along" only if the party says yes; write both branches, or keep the plan independent of it)
+
+Where a beat needs a PC, write the setup and the hook ("If Berg holds Grath back…", "If anyone asks…") and leave the rest to the table. Dan raised this at the Session 23 table (Icewind Dale, 2026-10-16).
+
+**The DM does the catch-up.** Don't plan a block where players recap the last session for each other or for a returning player. Dan opens with the recap himself, which keeps the pacing tight. Players remember the session from a week ago, while their characters lived it minutes ago. A one-line "catch-up: DM recap" entry in the table-business block is enough.
+
 ## Step 6 — Review and write
 
 Show the draft. Use AskUserQuestion:
